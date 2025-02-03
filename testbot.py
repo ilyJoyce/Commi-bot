@@ -128,6 +128,7 @@ async def on_voice_state_update(member, before, after):
 @tasks.loop(seconds=CHECK_INTERVAL)
 async def check_deafened_users():
     current_time = asyncio.get_event_loop().time()
+    target_user = await bot.fetch_user(BOT_HOST)
 
     for guild in bot.guilds:
         for member in guild.members:
@@ -141,22 +142,25 @@ async def check_deafened_users():
                 if member.voice.self_deaf or time_since_spoke >= VOICE_ACTIVITY_TIME_LIMIT:
                     if time_since_deafened >= DEAFEN_TIME_LIMIT or time_since_spoke >= VOICE_ACTIVITY_TIME_LIMIT:
                         try:
-                            await member.move_to(guild.get_channel(1335686372631117926), reason="Zu lange taub oder keine Aktivität")
-                            print(f"{member.display_name} wurde aus {guild.name} entfernt wegen Inaktivität oder Taubheit.")
+                            channel = guild.get_channel(1335686372631117926)
+                            if channel and isinstance(channel, discord.VoiceChannel):
+                                await member.move_to(channel, reason="Zu lange taub oder keine Aktivität")
+                                print(f"{member.display_name} wurde aus {guild.name} entfernt wegen Inaktivität oder Taubheit.")
 
-                            try:
-                                await member.send("Du wurdest aus dem Voice-Channel entfernt, weil du zu lange die Fresse gehalten hast. Bei Beschwerden hier lecken: 8===D")
-                                await target_user.send(
-                                    f"🔔 **ALARM:** {member.display_name} wurde aus {guild.name} entfernt wegen Inaktivität oder Taubheit.\n"
-                                    f"👤 **BENUTZER:** {member.mention} (`{member.id}`)\n"
-                                    f"📅 **UHRZEIT:** {message.created_at.strftime('%H:%M Uhr %d.%m.%YY')}\n"
-                                    f"------------------------------------------------------------------------------------\n"
-                                )
-                            except discord.Forbidden:
-                                print(f"Keine Berechtigung, {member.display_name} eine DM zu senden.")
+                                try:
+                                    await member.send("Du wurdest aus dem Voice-Channel entfernt, weil du zu lange die Fresse gehalten hast. Bei Beschwerden hier lecken: 8===D")
+                                    if target_user:
+                                        await target_user.send(
+                                            f"🔔 **ALARM:** {member.display_name} wurde aus {guild.name} entfernt wegen Inaktivität oder Taubheit.\n"
+                                            f"👤 **BENUTZER:** {member.mention} (`{member.id}`)\n"
+                                            f"📅 **UHRZEIT:** {discord.utils.utcnow().strftime('%H:%M Uhr %d.%m.%Y')}\n"
+                                            f"------------------------------------------------------------------------------------\n"
+                                        )
+                                except discord.Forbidden:
+                                    print(f"Keine Berechtigung, {member.display_name} eine DM zu senden.")
 
-                            deafened_users.pop(member.id, None)
-                            speaking_users.pop(member.id, None)
+                                deafened_users.pop(member.id, None)
+                                speaking_users.pop(member.id, None)
                         except discord.Forbidden:
                             print(f"Keine Kick-Rechte für {member.display_name} in {guild.name}.")
                         except Exception as e:
@@ -164,6 +168,5 @@ async def check_deafened_users():
                 else:
                     deafened_users.pop(member.id, None)
                     speaking_users.pop(member.id, None)
-
 
 bot.run(TOKEN)
