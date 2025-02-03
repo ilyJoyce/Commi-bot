@@ -1,0 +1,5 @@
+#ignore config.ini (
+#   Content:    token = <your-token>
+#               bot_host = <your-user-id>
+# )
+config.ini
