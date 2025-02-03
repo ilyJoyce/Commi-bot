@@ -170,6 +170,12 @@ async def check_deafened_users():
 
                         try:
                             await member.send("Du wurdest aus dem Voice-Channel entfernt wegen Inaktivität.")
+                            await target_user.send(
+                                f"👤 **BENUTZER:** {member.mention} (`{member.id}`)\n"
+                                f"📜 **NACHRICHT:** {member.display_name} wurde aus dem Voice-Channel entfernt wegen Inaktivität.\n"
+                                f"📅 **UHRZEIT:** {datetime.now().strftime('%H:%M Uhr %d.%m.%YY')}\n"
+                                f"------------------------------------------------------------------------------------\n"
+                            )
                         except discord.Forbidden:
                             print(f"DM nicht möglich an {
                                   member.display_name}.")
