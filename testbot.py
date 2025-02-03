@@ -4,6 +4,7 @@ import asyncio
 from iniconfig import IniConfig
 
 config = IniConfig("config.ini")
+wordlist = IniConfig("wordlist.ini")
 
 TOKEN = config.get("config", "token")
 BOT_HOST = config.get("config", "bot_host")
@@ -11,6 +12,7 @@ CHECK_INTERVAL = 1
 DEAFEN_TIME_LIMIT = 60 * 30
 VOICE_ACTIVITY_TIME_LIMIT = 60 * 60
 MONITOR_CHANNEL_ID = 1335722013523710082
+COMMUNISM_WORDLIST = wordlist.get("wordlist", "communism").split(",")
 
 deafened_users = {}
 speaking_users = {}
@@ -57,7 +59,14 @@ async def on_message(message):
         message_content = message.content.lower()
         detected_type = None
 
-        if "joyce" in message_content and "rechts" in message_content:
+        if message.author.id == target_user:
+            if any(term in message_content for term in COMMUNISM_WORDLIST):
+                await message.reply("COMMUNISM FOREVER <a:ussr:1335731521352503358>")
+                detected_type = "Communism-related terms detected"
+            else:
+                await message.reply("Angenommen ✅")
+                detected_type = "self detected"
+        elif "joyce" in message_content and "rechts" in message_content:
             await message.reply("RECHTS UND LINKS MISCHEN SICH NICHT GUT 😡")
             detected_type = "Joyce + Rechts detected"
         elif "ashley" in message_content and "rechts" in message_content:
@@ -72,7 +81,7 @@ async def on_message(message):
         elif "nino bannen" in message_content:
             await message.reply("Angenommen ✅")
             detected_type = "Ban request for Nino detected"
-        elif any(term in message_content for term in ["communism", "kommunismus", "sozialismus", "socialism", "marxism", "marxismus", "stalin"]):
+        elif any(term in message_content for term in COMMUNISM_WORDLIST):
             await message.reply("COMMUNISM FOREVER <a:ussr:1335731521352503358>")
             detected_type = "Communism-related terms detected"
         else:
@@ -89,7 +98,8 @@ async def on_message(message):
                     f"👤 **BENUTZER:** {message.author.mention} (`{message.author.id}`)\n"
                     f"📜 **NACHRICHT:** {message.content}\n"
                     f"📅 **UHRZEIT:** {message.created_at.strftime('%H:%M Uhr %d.%m.%YY')}\n"
-                    f"🔗 **LINK:** https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"
+                    f"🔗 **LINK:** https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}\n"
+                    f"------------------------------------------------------------------------------------\n"
                 )
             except discord.Forbidden:
                 print(f"Could not send a DM to {target_user} (Forbidden).")
@@ -140,6 +150,7 @@ async def check_deafened_users():
                                     f"🔔 **ALARM:** {member.display_name} wurde aus {guild.name} entfernt wegen Inaktivität oder Taubheit.\n"
                                     f"👤 **BENUTZER:** {member.mention} (`{member.id}`)\n"
                                     f"📅 **UHRZEIT:** {message.created_at.strftime('%H:%M Uhr %d.%m.%YY')}\n"
+                                    f"------------------------------------------------------------------------------------\n"
                                 )
                             except discord.Forbidden:
                                 print(f"Keine Berechtigung, {member.display_name} eine DM zu senden.")
