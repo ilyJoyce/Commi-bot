@@ -155,13 +155,13 @@ async def check_deafened_users():
                     if time_since_deafened >= DEAFEN_TIME_LIMIT or time_since_spoke >= VOICE_ACTIVITY_TIME_LIMIT:
                         try:
                             channel = guild.get_channel(1335686372631117926)
-                            if channel:
+                            if channel and member.voice.channel != channel:
                                 await member.move_to(channel, reason="Zu lange taub oder keine Aktivität")
                                 print(f"{member.display_name} wurde aus {
                                       guild.name} entfernt.")
 
                                 try:
-                                    await member.send("Du wurdest aus dem Voice-Channel entfernt.")
+                                    await member.send("Du wurdest aus dem Voice-Channel in {guild.name} entfernt. Du scheiss Kapitalist")
                                 except discord.Forbidden:
                                     print(f"DM nicht möglich an {
                                           member.display_name}.")
