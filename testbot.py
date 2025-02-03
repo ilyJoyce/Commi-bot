@@ -17,8 +17,8 @@ COMMUNISM_WORDLIST = wordlist.get("wordlist", "communism").split(",")
 deafened_users = {}
 speaking_users = {}
 whitelist = {
-    "766992639916376064", "1141143333335465995", "871497360658800640", "729707718730055773",
-    "556889798170640384", "271324530901778433", "785989592158306365", "710432389943263283",
+    766992639916376064, 1141143333335465995, 871497360658800640, 729707718730055773,
+    556889798170640384, 271324530901778433, 785989592158306365, 710432389943263283,
 }
 
 intents = discord.Intents.default()
@@ -33,6 +33,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 last_message_time = 0
 cooldown_time = 2
 
+
 @bot.event
 async def on_ready():
     print(f"Eingeloggt als {bot.user}")
@@ -40,6 +41,7 @@ async def on_ready():
 
     with open("/home/home/bot/pfp.gif", "rb") as f:
         await bot.user.edit(avatar=f.read())
+
 
 @bot.event
 async def on_message(message):
@@ -95,10 +97,13 @@ async def on_message(message):
             try:
                 await target_user.send(
                     f"🔔 **ALARM:** {detected_type}\n"
-                    f"👤 **BENUTZER:** {message.author.mention} (`{message.author.id}`)\n"
+                    f"👤 **BENUTZER:** {
+                        message.author.mention} (`{message.author.id}`)\n"
                     f"📜 **NACHRICHT:** {message.content}\n"
-                    f"📅 **UHRZEIT:** {message.created_at.strftime('%H:%M Uhr %d.%m.%YY')}\n"
-                    f"🔗 **LINK:** https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}\n"
+                    f"📅 **UHRZEIT:** {message.created_at.strftime(
+                        '%H:%M Uhr %d.%m.%YY')}\n"
+                    f"🔗 **LINK:** https://discord.com/channels/{
+                        message.guild.id}/{message.channel.id}/{message.id}\n"
                     f"------------------------------------------------------------------------------------\n"
                 )
             except discord.Forbidden:
@@ -111,19 +116,18 @@ async def on_message(message):
 
 @bot.event
 async def on_voice_state_update(member, before, after):
+    """Track when a user starts/stops speaking or deafens themselves."""
     current_time = asyncio.get_event_loop().time()
 
-    if after.channel is not None:
-        if after.self_deaf:
-            deafened_users[member.id] = current_time
-        else:
-            speaking_users[member.id] = current_time
+    if after.self_deaf and not before.self_deaf:
+        deafened_users[member.id] = current_time
+    elif not after.self_deaf:
+        deafened_users.pop(member.id, None)
 
-    elif before.channel is not None:
-        if member.id in deafened_users:
-            del deafened_users[member.id]
-        if member.id in speaking_users:
-            del speaking_users[member.id]
+    if after.channel is None:
+        speaking_users.pop(member.id, None)
+        deafened_users.pop(member.id, None)
+
 
 @tasks.loop(seconds=CHECK_INTERVAL)
 async def check_deafened_users():
@@ -133,8 +137,16 @@ async def check_deafened_users():
     for guild in bot.guilds:
         for member in guild.members:
             if member.voice:
-                time_since_deafened = current_time - deafened_users.get(member.id, current_time)
-                time_since_spoke = current_time - speaking_users.get(member.id, current_time)
+                if member.id not in deafened_users and member.voice.self_deaf:
+                    deafened_users[member.id] = current_time
+
+                if member.id not in speaking_users:
+                    speaking_users[member.id] = current_time
+
+                time_since_deafened = current_time - \
+                    deafened_users.get(member.id, 0)
+                time_since_spoke = current_time - \
+                    speaking_users.get(member.id, 0)
 
                 if member.id in whitelist:
                     continue
@@ -143,30 +155,18 @@ async def check_deafened_users():
                     if time_since_deafened >= DEAFEN_TIME_LIMIT or time_since_spoke >= VOICE_ACTIVITY_TIME_LIMIT:
                         try:
                             channel = guild.get_channel(1335686372631117926)
-                            if channel and isinstance(channel, discord.VoiceChannel):
+                            if channel:
                                 await member.move_to(channel, reason="Zu lange taub oder keine Aktivität")
-                                print(f"{member.display_name} wurde aus {guild.name} entfernt wegen Inaktivität oder Taubheit.")
+                                print(f"{member.display_name} wurde aus {
+                                      guild.name} entfernt.")
 
                                 try:
-                                    await member.send("Du wurdest aus dem Voice-Channel entfernt, weil du zu lange die Fresse gehalten hast. Bei Beschwerden hier lecken: 8===D")
-                                    if target_user:
-                                        await target_user.send(
-                                            f"🔔 **ALARM:** {member.display_name} wurde aus {guild.name} entfernt wegen Inaktivität oder Taubheit.\n"
-                                            f"👤 **BENUTZER:** {member.mention} (`{member.id}`)\n"
-                                            f"📅 **UHRZEIT:** {discord.utils.utcnow().strftime('%H:%M Uhr %d.%m.%Y')}\n"
-                                            f"------------------------------------------------------------------------------------\n"
-                                        )
+                                    await member.send("Du wurdest aus dem Voice-Channel entfernt.")
                                 except discord.Forbidden:
-                                    print(f"Keine Berechtigung, {member.display_name} eine DM zu senden.")
-
-                                deafened_users.pop(member.id, None)
-                                speaking_users.pop(member.id, None)
-                        except discord.Forbidden:
-                            print(f"Keine Kick-Rechte für {member.display_name} in {guild.name}.")
+                                    print(f"DM nicht möglich an {
+                                          member.display_name}.")
                         except Exception as e:
-                            print(f"Fehler beim Entfernen von {member.display_name} aus {guild.name}: {e}")
-                else:
-                    deafened_users.pop(member.id, None)
-                    speaking_users.pop(member.id, None)
+                            print(f"Fehler beim Entfernen von {
+                                  member.display_name}: {e}")
 
 bot.run(TOKEN)
