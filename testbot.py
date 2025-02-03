@@ -1,5 +1,5 @@
-import discord # type: ignore
-from discord.ext import tasks, commands # type: ignore
+import discord  # type: ignore
+from discord.ext import tasks, commands  # type: ignore
 import asyncio
 from iniconfig import IniConfig
 
@@ -19,6 +19,7 @@ speaking_users = {}
 whitelist = {
     766992639916376064, 1141143333335465995, 871497360658800640, 729707718730055773,
     556889798170640384, 271324530901778433, 785989592158306365, 710432389943263283,
+    1102328237889167470, 
 }
 
 intents = discord.Intents.default()
@@ -124,6 +125,9 @@ async def on_voice_state_update(member, before, after):
     elif not after.self_deaf:
         deafened_users.pop(member.id, None)
 
+    if after.channel and (before.self_mute != after.self_mute or before.self_deaf != after.self_deaf):
+        speaking_users[member.id] = current_time
+
     if after.channel is None:
         speaking_users.pop(member.id, None)
         deafened_users.pop(member.id, None)
@@ -136,37 +140,48 @@ async def check_deafened_users():
 
     for guild in bot.guilds:
         for member in guild.members:
-            if member.voice:
-                if member.id not in deafened_users and member.voice.self_deaf:
-                    deafened_users[member.id] = current_time
+            if not member.voice:
+                continue 
 
-                if member.id not in speaking_users:
-                    speaking_users[member.id] = current_time
+            if member.id not in deafened_users and member.voice.self_deaf:
+                deafened_users[member.id] = current_time
 
-                time_since_deafened = current_time - \
-                    deafened_users.get(member.id, 0)
-                time_since_spoke = current_time - \
-                    speaking_users.get(member.id, 0)
+            if member.id not in speaking_users:
+                speaking_users[member.id] = current_time
 
-                if member.id in whitelist:
-                    continue
+            time_since_deafened = current_time - \
+                deafened_users.get(member.id, 0)
+            time_since_spoke = current_time - speaking_users.get(member.id, 0)
 
-                if member.voice.self_deaf or time_since_spoke >= VOICE_ACTIVITY_TIME_LIMIT:
-                    if time_since_deafened >= DEAFEN_TIME_LIMIT or time_since_spoke >= VOICE_ACTIVITY_TIME_LIMIT:
+            if member.id in whitelist:
+                continue
+
+            afk_channel = guild.get_channel(1335686372631117926)
+            if member.voice.channel == afk_channel:
+                continue
+
+            if (member.voice.self_deaf and time_since_deafened >= DEAFEN_TIME_LIMIT) or \
+               (not member.voice.self_deaf and time_since_spoke >= VOICE_ACTIVITY_TIME_LIMIT):
+                try:
+                    if afk_channel:
+                        await member.move_to(afk_channel, reason="Zu lange taub oder keine Aktivität")
+                        print(
+                            f"{member.display_name} wurde in den AFK-Channel verschoben.")
+
                         try:
-                            channel = guild.get_channel(1335686372631117926)
-                            if channel and member.voice.channel != channel:
-                                await member.move_to(channel, reason="Zu lange taub oder keine Aktivität")
-                                print(f"{member.display_name} wurde aus {
-                                      guild.name} entfernt.")
+                            await member.send("Du wurdest aus dem Voice-Channel entfernt wegen Inaktivität.")
+                        except discord.Forbidden:
+                            print(f"DM nicht möglich an {
+                                  member.display_name}.")
 
-                                try:
-                                    await member.send("Du wurdest aus dem Voice-Channel in {guild.name} entfernt. Du scheiss Kapitalist")
-                                except discord.Forbidden:
-                                    print(f"DM nicht möglich an {
-                                          member.display_name}.")
-                        except Exception as e:
-                            print(f"Fehler beim Entfernen von {
-                                  member.display_name}: {e}")
+                        deafened_users.pop(member.id, None)
+                        speaking_users.pop(member.id, None)
+
+                except discord.Forbidden:
+                    print(f"Keine Rechte, um {
+                          member.display_name} zu verschieben.")
+                except Exception as e:
+                    print(f"Fehler beim Verschieben von {
+                          member.display_name}: {e}")
 
 bot.run(TOKEN)
