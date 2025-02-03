@@ -1,5 +1,5 @@
-import discord
-from discord.ext import tasks, commands
+import discord # type: ignore
+from discord.ext import tasks, commands # type: ignore
 import asyncio
 from iniconfig import IniConfig
 
