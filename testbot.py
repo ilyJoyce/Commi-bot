@@ -9,8 +9,8 @@ wordlist = IniConfig("wordlist.ini")
 TOKEN = config.get("config", "token")
 BOT_HOST = config.get("config", "bot_host")
 CHECK_INTERVAL = 1
-DEAFEN_TIME_LIMIT = 60 * 30
-VOICE_ACTIVITY_TIME_LIMIT = 60 * 60
+DEAFEN_TIME_LIMIT = 60 * 20
+VOICE_ACTIVITY_TIME_LIMIT = 60 * 45
 MONITOR_CHANNEL_ID = 1335722013523710082
 COMMUNISM_WORDLIST = wordlist.get("wordlist", "communism").split(",")
 
