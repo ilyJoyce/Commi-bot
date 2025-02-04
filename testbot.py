@@ -1,4 +1,6 @@
 import discord  # type: ignore
+from discord.ext import commands
+from discord import app_commands
 from discord.ext import tasks, commands  # type: ignore
 import asyncio
 from iniconfig import IniConfig
@@ -40,6 +42,7 @@ intents.messages = True
 intents.message_content = True
 intents.typing = False
 bot = commands.Bot(command_prefix="ussr:", intents=intents)
+bot.remove_command("help")
 
 last_message_time = 0
 cooldown_time = 2
@@ -49,6 +52,11 @@ cooldown_time = 2
 async def on_ready():
     print(f"Eingeloggt als {bot.user}")
     check_deafened_users.start()
+    try:
+        synced = await bot.tree.sync()  # Sync slash commands
+        print(f"✅ {len(synced)} Slash Commands synced!")
+    except Exception as e:
+        print(f"❌ Fehler beim Syncen: {e}")
 
     with open("/home/home/bot/pfp.gif", "rb") as f:
         await bot.user.edit(avatar=f.read())
@@ -65,6 +73,74 @@ async def greet(ctx, member: discord.Member = None):
         member = ctx.author
     
     await ctx.send(f"👋 Привет, {member.mention}!")
+
+@bot.command(aliases=["help", "commands", "support", "about"])
+async def info(ctx):
+    """Zeigt Informationen über den Commi Bot an"""
+    embed = discord.Embed(
+        title="☭ Commi Bot Info ☭",
+        description="Hier sind alle wichtigen Infos über mich!",
+        color=discord.Color.red()  # USSR Red 😉
+    )
+
+    embed.set_thumbnail(url=bot.user.avatar.url)  # Bot's Avatar
+    embed.set_footer(text="Communism Forever! ☭")
+
+    # Bot Details
+    embed.add_field(name="📌 Name", value=bot.user.name, inline=True)
+    embed.add_field(name="🆔 ID", value=bot.user.id, inline=True)
+    embed.add_field(name="💡 Präfix", value="ussr:", inline=False)
+
+    # Features
+    embed.add_field(
+        name="🔧 Funktionen",
+        value="✅ Automatische Moderation\n✅ Kommunismus-Propaganda\n✅ Überwachung von Voice-Chat-Aktivitäten\n✅ Faire aufteilung von Nachrichten",
+        inline=False
+    )
+
+    # Server & Member Count
+    embed.add_field(name="🌍 Server", value=f"{len(bot.guilds)} Server", inline=True)
+    embed.add_field(name="👥 Mitglieder", value=f"{sum(g.member_count for g in bot.guilds)} Mitglieder", inline=True)
+
+    # Add a custom GIF or image (Optional)
+    embed.set_image(url="https://c.tenor.com/KOI-kAqLStgAAAAd/tenor.gif")
+
+    await ctx.send(embed=embed)
+
+@app_commands.command(name="info", description="Zeigt Informationen über den Commi Bot")
+async def info(interaction: discord.Interaction):
+    embed = discord.Embed(
+        title="☭ Commi Bot Info ☭",
+        description="Hier sind alle wichtigen Infos über mich!",
+        color=discord.Color.red()
+    )
+
+    embed.set_thumbnail(url=interaction.client.user.avatar.url)
+    embed.set_footer(text="Communism Forever! ☭")
+
+    # Bot Details
+    embed.add_field(name="📌 Name", value=interaction.client.user.name, inline=True)
+    embed.add_field(name="🆔 ID", value=interaction.client.user.id, inline=True)
+    embed.add_field(name="💡 Präfix", value="`ussr:`", inline=False)
+
+    # Features
+    embed.add_field(
+        name="🔧 Funktionen",
+        value="✅ Automatische Moderation\n✅ Kommunismus-Propaganda\n✅ Überwachung von Voice-Chat-Aktivitäten\n✅ Faire aufteilung von Nachrichten",
+        inline=False
+    )
+
+    # Server & Member Count
+    embed.add_field(name="🌍 Server", value=f"{len(interaction.client.guilds)} Server", inline=True)
+    embed.add_field(name="👥 Mitglieder", value=f"{sum(g.member_count for g in interaction.client.guilds)} Mitglieder", inline=True)
+
+    # Add a custom GIF or image (Optional)
+    embed.set_image(url="https://media.tenor.com/Lh01n6hzpLAAAAAd/communism.gif")
+
+    await interaction.response.send_message(embed=embed)
+
+bot.tree.add_command(info)
+
 
 @bot.event
 async def on_message(message):
