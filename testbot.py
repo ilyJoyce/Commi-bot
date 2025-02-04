@@ -22,6 +22,16 @@ whitelist = {
     1102328237889167470, 
 }
 
+# 766992639916376064 - teufelshirn
+# 1141143333335465995 - 2nd account
+# 871497360658800640 - Ashley
+# 729707718730055773 - Joyce
+# 556889798170640384 - Felix
+# 271324530901778433 - Mara
+# 785989592158306365 - Zoe
+# 710432389943263283 - Leyla
+# 1102328237889167470 - Alki
+
 intents = discord.Intents.default()
 intents.voice_states = True
 intents.guilds = True
@@ -29,7 +39,7 @@ intents.members = True
 intents.messages = True
 intents.message_content = True
 intents.typing = False
-bot = commands.Bot(command_prefix="!", intents=intents)
+bot = commands.Bot(command_prefix="ussr:", intents=intents)
 
 last_message_time = 0
 cooldown_time = 2
@@ -43,6 +53,18 @@ async def on_ready():
     with open("/home/home/bot/pfp.gif", "rb") as f:
         await bot.user.edit(avatar=f.read())
 
+@bot.command()
+async def ping(ctx):
+    """Antwortet mit Pong!"""
+    await ctx.send("🏓 Pong!")
+
+@bot.command()
+async def greet(ctx, member: discord.Member = None):
+    """Begrüßt einen Benutzer mit Ping"""
+    if member is None:
+        member = ctx.author
+    
+    await ctx.send(f"👋 Привет, {member.mention}!")
 
 @bot.event
 async def on_message(message):
@@ -69,12 +91,9 @@ async def on_message(message):
             else:
                 await message.reply("Angenommen ✅")
                 detected_type = "self detected"
-        elif "joyce" in message_content and "rechts" in message_content:
+        elif ("joyce" in message_content or "ashley" in message_content) and "rechts" in message_content:
             await message.reply("RECHTS UND LINKS MISCHEN SICH NICHT GUT 😡")
-            detected_type = "Joyce + Rechts detected"
-        elif "ashley" in message_content and "rechts" in message_content:
-            await message.reply("RECHTS UND LINKS MISCHEN SICH NICHT GUT 😡")
-            detected_type = "Ashley + Rechts detected"
+            detected_type = "Ashley + Rechts or Joyce + Rechts detected"
         elif "joyce" in message_content or "ashley" in message_content:
             await message.reply("Angenommen ✅")
             detected_type = "Joyce or Ashley detected"
@@ -102,7 +121,7 @@ async def on_message(message):
                         message.author.mention} (`{message.author.id}`)\n"
                     f"📜 **NACHRICHT:** {message.content}\n"
                     f"📅 **UHRZEIT:** {message.created_at.strftime(
-                        '%H:%M Uhr %d.%m.%YY')}\n"
+                        '%H:%M Uhr %d.%m.%Y')}\n"
                     f"🔗 **LINK:** https://discord.com/channels/{
                         message.guild.id}/{message.channel.id}/{message.id}\n"
                     f"------------------------------------------------------------------------------------\n"
@@ -173,7 +192,7 @@ async def check_deafened_users():
                             await target_user.send(
                                 f"👤 **BENUTZER:** {member.mention} (`{member.id}`)\n"
                                 f"📜 **NACHRICHT:** {member.display_name} wurde aus dem Voice-Channel entfernt wegen Inaktivität.\n"
-                                f"📅 **UHRZEIT:** {datetime.now().strftime('%H:%M Uhr %d.%m.%YY')}\n"
+                                f"📅 **UHRZEIT:** {datetime.now().strftime('%H:%M Uhr %d.%m.%Y')}\n"
                                 f"------------------------------------------------------------------------------------\n"
                             )
                         except discord.Forbidden:
