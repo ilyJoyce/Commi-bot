@@ -3,7 +3,7 @@ from discord.ext import commands  # type: ignore
 from discord import app_commands  # type: ignore
 from discord.ext import tasks, commands  # type: ignore
 import asyncio
-import datetime
+from datetime import datetime
 from iniconfig import IniConfig
 
 config = IniConfig("config.ini")
