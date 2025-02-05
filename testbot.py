@@ -11,7 +11,7 @@ wordlist = IniConfig("wordlist.ini")
 
 TOKEN = config.get("config", "token")
 BOT_HOST = config.get("config", "bot_host")
-CHECK_INTERVAL = 1
+CHECK_INTERVAL = 10
 DEAFEN_TIME_LIMIT = 60 * 20
 VOICE_ACTIVITY_TIME_LIMIT = 60 * 45
 MONITOR_CHANNEL_ID = 1335722013523710082
@@ -73,31 +73,30 @@ async def ping(ctx):
 async def bumm(ctx, *members: discord.Member):
     if ctx.author.guild_permissions.move_members:
         if members:
-            for member in members:
-                if member.voice and member.voice.channel:
-                    channel = member.voice.channel
-                    await ctx.send(f"{member.mention}! Es kracht!")
-                    await asyncio.sleep(2)
-                    await ctx.send(f"{member.mention}! Es knallt!")
-                    await asyncio.sleep(2)
-                    await ctx.send(f"{member.mention}! ES WIRD PASSIEREN!")
-                    await asyncio.sleep(2)
-                    await ctx.send(f"{member.mention}! WARTS AB DU MISSIT!")
-                    await asyncio.sleep(2)
+            mentions = " ".join([member.mention for member in members])
+            await ctx.send(f"{mentions} Es kracht!")
+            await asyncio.sleep(2)
+            await ctx.send(f"{mentions} dann knallt's!")
+            await asyncio.sleep(2)
+            await ctx.send(f"{mentions} ES WIRD PASSIEREN!")
+            await asyncio.sleep(5)
 
-                    vc = await channel.connect()
-                    vc.play(discord.FFmpegPCMAudio("verpiss-dich.mp3"))
-                    await asyncio.sleep(1.8)
+            if members[0].voice and members[0].voice.channel:
+                channel = members[0].voice.channel
+                vc = await channel.connect()
 
+                vc.play(discord.FFmpegPCMAudio("verpiss-dich.mp3"))
+                await asyncio.sleep(1.8)
+
+                for member in members:
                     if member.voice and member.voice.channel == channel:
-                        await member.move_to(None, reason="Kicked by moderator")
-                        await asyncio.sleep(0.8)
-                    else:
-                        await ctx.send(f"{member.mention} is no longer in the voice channel.")
+                        await member.move_to(None)
 
-                    await vc.disconnect()
-                else:
-                    await ctx.send(f"{member.mention} is not in a voice channel.")
+                await asyncio.sleep(0.8)
+                await vc.disconnect()
+
+            else:
+                await ctx.send("One or more members are not in a voice channel.")
         else:
             await ctx.send("Please mention at least one member to disconnect.")
     else:
@@ -374,11 +373,7 @@ async def on_voice_state_update(member, before, after):
     elif not after.self_deaf:
         deafened_users.pop(member.id, None)
 
-    if after.channel and (before.self_mute != after.self_mute or before.self_deaf != after.self_deaf):
-        speaking_users[member.id] = current_time
-
     if after.channel is None:
-        speaking_users.pop(member.id, None)
         deafened_users.pop(member.id, None)
 
 
@@ -395,12 +390,7 @@ async def check_deafened_users():
             if member.id not in deafened_users and member.voice.self_deaf:
                 deafened_users[member.id] = current_time
 
-            if member.id not in speaking_users:
-                speaking_users[member.id] = current_time
-
-            time_since_deafened = current_time - \
-                deafened_users.get(member.id, 0)
-            time_since_spoke = current_time - speaking_users.get(member.id, 0)
+            time_since_deafened = current_time - deafened_users.get(member.id, 0)
 
             if member.id in whitelist:
                 continue
@@ -409,8 +399,7 @@ async def check_deafened_users():
             if member.voice.channel == afk_channel:
                 continue
 
-            if (member.voice.self_deaf and time_since_deafened >= DEAFEN_TIME_LIMIT) or \
-               (not member.voice.self_deaf and time_since_spoke >= VOICE_ACTIVITY_TIME_LIMIT):
+            if (member.voice.self_deaf and time_since_deafened >= DEAFEN_TIME_LIMIT):
                 try:
                     if afk_channel:
                         await member.move_to(afk_channel, reason="Zu lange taub oder keine Aktivität")
@@ -419,15 +408,20 @@ async def check_deafened_users():
 
                         try:
                             await member.send("Du wurdest aus dem Voice-Channel entfernt wegen Inaktivität.")
-                            await target_user.send(
-                                f"👤 **BENUTZER:** {
-                                    member.mention} (`{member.id}`)\n"
-                                f"📜 **NACHRICHT:** {
-                                    member.display_name} wurde aus dem Voice-Channel entfernt wegen Inaktivität.\n"
-                                f"📅 **UHRZEIT:** {datetime.now().strftime(
-                                    '%H:%M Uhr %d.%m.%Y')}\n"
-                                f"------------------------------------------------------------------------------------\n"
-                            )
+                            try:
+                                await target_user.send(
+                                    f"👤 **BENUTZER:** {
+                                        member.mention} (`{member.id}`)\n"
+                                    f"📜 **NACHRICHT:** {
+                                        member.display_name} wurde aus dem Voice-Channel entfernt wegen Inaktivität.\n"
+                                    f"📅 **UHRZEIT:** {datetime.now().strftime(
+                                        '%H:%M Uhr %d.%m.%Y')}\n"
+                                    f"------------------------------------------------------------------------------------\n"
+                                )
+                            except discord.Forbidden:
+                                print(f"DM nicht möglich an {
+                                      target_user.display_name}.")
+                                await member.send("Es konnte keine DM an {target_user.display_name} geschickt werden.")
                         except discord.Forbidden:
                             print(f"DM nicht möglich an {
                                   member.display_name}.")
