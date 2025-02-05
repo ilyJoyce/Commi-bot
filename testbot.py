@@ -1,8 +1,9 @@
 import discord  # type: ignore
-from discord.ext import commands
-from discord import app_commands
+from discord.ext import commands  # type: ignore
+from discord import app_commands  # type: ignore
 from discord.ext import tasks, commands  # type: ignore
 import asyncio
+import datetime
 from iniconfig import IniConfig
 
 config = IniConfig("config.ini")
@@ -21,7 +22,7 @@ speaking_users = {}
 whitelist = {
     766992639916376064, 1141143333335465995, 871497360658800640, 729707718730055773,
     556889798170640384, 271324530901778433, 785989592158306365, 710432389943263283,
-    1102328237889167470, 
+    1102328237889167470,
 }
 
 # 766992639916376064 - teufelshirn
@@ -50,31 +51,131 @@ cooldown_time = 2
 
 @bot.event
 async def on_ready():
+    target_user = await bot.fetch_user(BOT_HOST)
     print(f"Eingeloggt als {bot.user}")
+    await target_user.send(
+        f"🆙 **BOT-START:** Kommi Bot wurde erfolgreich gestartet\n"
+        f"------------------------------------------------------------------------------------\n"
+    )
     check_deafened_users.start()
-    try:
-        synced = await bot.tree.sync()  # Sync slash commands
-        print(f"✅ {len(synced)} Slash Commands synced!")
-    except Exception as e:
-        print(f"❌ Fehler beim Syncen: {e}")
 
     with open("/home/home/bot/pfp.gif", "rb") as f:
         await bot.user.edit(avatar=f.read())
+
 
 @bot.command()
 async def ping(ctx):
     """Antwortet mit Pong!"""
     await ctx.send("🏓 Pong!")
 
+
+@bot.command()
+async def bumm(ctx, member: discord.Member = None):
+    if ctx.author.guild_permissions.move_members: 
+        if member.voice and member.voice.channel:
+            channel = member.voice.channel
+            await ctx.send(f"{member.mention}! Es kracht!")
+            await asyncio.sleep(2)
+            await ctx.send(f"{member.mention}! Es knallt!")
+            await asyncio.sleep(2)
+            await ctx.send(f"{member.mention}! ES WIRD PASSIEREN!")
+            await asyncio.sleep(2)
+            await ctx.send(f"{member.mention}! WARTS AB DU MISSIT!")
+            await asyncio.sleep(2)
+
+            vc = await channel.connect()
+            vc.play(discord.FFmpegPCMAudio("disconnect.mp3"))
+            while vc.is_playing():
+                await asyncio.sleep(1)
+
+            await member.move_to(None, reason="Kicked by moderator")
+            await asyncio.sleep((2))
+            await vc.disconnect()
+        else:
+            await ctx.send(f"Vorraussetzung nicht erfuellt")
+    else:
+        await ctx.send("Bumm :3")
+
+@bot.command()
+async def gay(ctx):
+    """GAY!"""
+    await ctx.send(
+        f"⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠿⠛⠛⢛⣿⣿⣿⣿⣿⣿⣿⠟⣁⣤⠹⣿⣿⣿⣿⣿\n"
+        f"⣿⣿⣿⣿⣿⡿⠿⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠛⣉⣤⣶⣿⠏⣴⣿⣿⣿⣿⣿⡿⠛⣡⣾⣿⣿⡆⢻⣿⣿⣿⣿\n"
+        f"⣿⣿⣿⣿⣿⠁⣶⣶⣶⣦⣤⣭⣉⡛⠻⢿⣿⣿⣿⡿⢋⣴⣿⣿⣿⣿⠃⠼⠿⠿⠿⣿⠿⢋⣴⣾⣿⣿⣿⣿⣷⠘⣿⣿⣿⣿\n"
+        f"⣿⣿⣿⣿⣿⡆⢿⣿⣿⣿⣿⣿⣿⣿⣷⣦⣍⠻⠟⢠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣄⠸⢿⣿⣿⣿⣿⣿⣿⣿⠀⣿⣿⣿⣿\n"
+        f"⣿⣿⣿⣿⣿⣧⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⡂⣻⣿⣿⣿⣿⣿⣿⣿⣁⣙⡛⠛⠛⠃⢘⣿⣿⣿⣿⣿⣿⣿⠃⣿⣿⣿⣿\n"
+        f"⣿⣿⠏⠙⢋⣥⡀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⣿⣿⣿⣿\n"
+        f"⣿⠏⣸⣶⣿⣿⣧⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢠⣿⣿⣿⣿\n"
+        f"⣿⠀⣿⣿⣿⣿⣿⣆⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡟⢸⣿⣿⣿⣿\n"
+        f"⣿⠀⣿⣿⣿⣿⣿⣿⡀⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠿⠿⠿⠿⠿⠿⢿⣿⣿⠛⠛⠛⠻⠿⠿⠿⠿⠿⣿⣿⣿⠇⣿⣿⣿⣿⣿\n"
+        f"⣿⣆⠩⣿⣿⣿⣿⣿⣷⠘⣿⣿⣿⣯⡅⢠⣶⣶⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⣶⣦⠰⣦⡼⢰⣿⣿⣿⣿⣿\n"
+        f"⣿⣿⣆⠙⣿⣿⣿⣿⣿⣧⡈⢿⣿⣿⡇⣿⣿⣏⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⡆⠀⠀⠀⠀⠀⠀⣹⣿⡇⢿⣷⣶⣬⣉⠻⢿⣿\n"
+        f"⣿⣿⣯⠁⣈⠻⣿⣿⣿⠟⣋⣠⣍⣉⣃⠘⢿⣿⡄⠀⠀⠀⠀⢀⣼⣿⣿⣿⣷⡀⠀⠀⠀⠀⣠⣿⡿⢁⣿⣿⣿⣿⣿⠷⠆⢻\n"
+        f"⣿⣿⣿⣷⡈⢿⣿⣿⣁⣘⡛⠻⠿⢿⣿⣷⣤⣿⣿⣶⣤⣤⣶⣿⣿⣿⣍⣭⣿⣿⡷⢖⣶⣾⣿⣿⣡⣾⣿⣿⣿⡄⢲⣶⣿⣿\n"
+        f"⣿⣿⣿⣿⣷⠈⣿⣿⣿⣿⣿⣿⢃⣾⣿⣿⡿⠛⠫⠭⢉⣿⣿⡘⠛⣋⣤⣍⣛⣋⣥⣾⡟⢋⠫⠍⣹⣿⡿⣿⣿⡇⢸⣿⣿⣿\n"
+        f"⣿⣿⣿⣿⣿⠁⣿⣿⣿⣿⣿⠃⣾⣿⣿⣿⣶⣭⣷⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⣽⣿⣿⡿⠋⣤⣌⠹⠇⣸⣿⣿⣿\n"
+        f"⣿⣿⣿⢿⠏⣼⣿⣿⣿⣿⣿⠸⠟⣉⣴⣬⡉⢉⠉⣉⣭⣍⡙⢿⣿⣿⣿⣿⣿⣿⠿⠿⠛⢛⣋⣡⣴⣿⣿⣿⣷⣶⣿⣿⣿⣿\n"
+        f"⣿⣿⠃⢀⣾⣿⣿⣿⣿⣿⣯⣤⣾⣿⣿⡿⢡⡏⣸⣿⣿⣿⣿⣦⣙⣿⣿⣿⣿⠃⠸⠾⠿⠿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿\n"
+        f"⣿⠏⣰⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋⠴⢻⠀⣿⣿⣿⣿⣿⣿⠘⣿⣿⣟⡀⠠⠈⣘⣿⣷⣦⠙⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿\n"
+        f"⣿⢀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠖⢂⣴⣿⡄⣿⣿⣿⣿⣿⣿⡆⢻⣿⣷⣄⣄⣙⠻⣿⣿⣿⣧⠸⣿⣿⣿⣿⣿⣿⣿⣿⣿\n"
+        f"⣿⠈⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⢃⣴⣿⣿⣿⡇⢸⣿⣿⣿⣿⣿⣷⠘⣿⣿⣿⣿⠀⣤⣸⣿⣿⣿⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿\n"
+        f"⣿⡄⢻⣿⣿⣿⣿⣿⣿⣿⣿⠇⡾⢿⣿⣿⣿⡇⡀⢿⣿⣿⣿⣿⣿⡆⢹⣿⡇⠈⠀⣿⣿⣿⣿⣿⡇⢻⣿⣿⣿⣿⣿⣿⣿⣿\n"
+        f"⠙⠣⠘⣿⣿⣿⣿⣿⣿⣿⣿⣀⡁⠸⣿⣿⡿⢁⣧⠘⣿⣿⣿⣿⣿⣿⡄⢿⣷⡇⢿⣿⣿⣿⣿⣿⡇⢸⣿⣿⣿⣿⣿⣿⣿⣿\n"
+        f"⣧⡐⢆⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⡦⠙⣋⣴⣿⣿⡄⢹⣿⣿⣿⣿⣿⣷⠘⣿⡇⢸⣿⣿⣿⣿⣿⡇⣼⣿⣿⣿⣿⣿⣿⣿⣿\n"
+        f"⣿⣷⣄⠑⣌⠻⣿⣿⣿⣿⣿⠟⢋⣴⣾⣿⣿⢿⣿⣿⡀⢿⣿⣿⣿⣿⣿⣧⠹⣧⢸⣿⣿⣿⣿⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿\n"
+        f"⣿⣿⣿⣷⣦⣉⠒⠭⠟⠟⢁⣴⣿⣿⣿⣿⣿⣦⣍⡙⠳⡈⢿⣿⣿⣿⣿⣿⣆⢹⠈⣿⣿⣿⣿⣿⠂⣿⣿⣿⣿⣿⣿⣿⣿⣿\n"
+        f"⣿⣿⣿⣿⣿⣿⣿⣷⠂⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣤⡈⠿⣿⣿⣿⣿⣿⡄⠀⣿⣿⣿⣿⣿⠀⣤⣍⣙⠻⢿⣿⣿⣿⣿\n"
+        f"⣿⣿⣿⣿⣿⣿⣿⠁⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⠙⣿⣿⣿⣿⣷⠀⣿⣿⣿⣿⣿⠀⣿⣿⣿⣿⣦⡌⢻⣿⣿\n"
+        f"⣿⣿⣿⣿⣿⣿⡏⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⡈⢿⣿⣿⣿⣇⢹⣿⣿⣿⣿⠀⣿⣿⣿⣿⣿⣿⣆⠻⣿\n"
+        f"⣿⣿⣿⣿⣿⣿⡇⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣄⢻⣿⣿⣿⡄⢿⣿⣿⣿⢰⣿⣿⣿⣿⣿⣿⣿⣆⠹\n"
+        f"⣿⣿⣿⣿⣿⣿⣇⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡄⢿⣿⣿⣷⡈⢿⣿⡏⢸⣿⣿⣿⣿⣿⣿⣿⣿⡆\n"
+        f"⣿⣿⣿⣿⣿⣿⠏⣀⠰⠹⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⠘⣿⣿⣿⣷⣌⠻⣧⣈⣉⡛⠻⣿⣿⣿⣿⡿⢀\n"
+        f"⣿⣿⣿⣿⣿⣿⠀⢿⣷⣌⠑⢍⡻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡆⢻⣿⣿⣿⣿⣧⠘⣿⣿⣿⣷⡌⢻⣿⠏⣠⣾\n"
+        f"⣿⣿⣿⣿⣿⣿⣦⣌⡙⠛⠛⠆⠈⠒⢝⡻⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠃⣿⣿⣿⣿⣿⣿⡇⢸⣿⣿⣿⣿⠀⣴⣾⣿⣿\n"
+        f"⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣦⣍⡓⠾⣯⣿⣟⣛⣛⣻⣿⣿⠿⠂⢼⣿⣿⣿⣿⣿⣿⠃⣾⣿⣿⣿⠟⢰⣿⣿⣿⣿\n"
+        f"⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣦⣬⣍⣉⣉⣉⣥⣤⣾⣷⡈⠫⣽⣿⣿⠿⢁⣌⣉⣉⣉⣠⣴⣿⣿⣿⣿⣿\n"
+        f"⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠿⣿⣿⣿⣿⣿⣿⣷⣦⣤⣶⣶⡿⣿⣿⠿⢿⣿⣿⣿⣿⣿⣿⣿\n"
+    )
+
+
 @bot.command()
 async def greet(ctx, member: discord.Member = None):
     """Begrüßt einen Benutzer mit Ping"""
     if member is None:
         member = ctx.author
-    
+
     await ctx.send(f"👋 Привет, {member.mention}!")
 
-@bot.command(aliases=["help", "commands", "support", "about"])
+
+@bot.command(aliases=["help"])
+async def commands(ctx):
+    """List all commands"""
+    embed = discord.Embed(
+        title="☭ Commi Bot Commands ☭",
+        description="Hier sind alle commands aufgelistet!",
+        color=discord.Color.red()  # USSR Red 😉
+    )
+
+    embed.set_thumbnail(url=bot.user.avatar.url)  # Bot's Avatar
+    embed.set_footer(text="Communism Forever! ☭")
+
+    # Bot Details
+    embed.add_field(name="📌 Name", value=bot.user.name, inline=True)
+    embed.add_field(name="🆔 ID", value=bot.user.id, inline=True)
+    embed.add_field(name="💡 Präfix", value="ussr:", inline=False)
+
+    # Features
+    embed.add_field(
+        name="🔧 Commands:",
+        value="**ping** -> pong\n**info** -> Zeigt generelle Infos zum bot.\n**gay** -> GAY!\n**greet** `<user-ping>` -> begruesst einen User.\n**kommunismus** -> erklaert den Kommunismus.",
+        inline=False
+    )
+
+    await ctx.send(embed=embed)
+
+
+@bot.command(aliases=["about"])
 async def info(ctx):
     """Zeigt Informationen über den Commi Bot an"""
     embed = discord.Embed(
@@ -94,18 +195,21 @@ async def info(ctx):
     # Features
     embed.add_field(
         name="🔧 Funktionen",
-        value="✅ Automatische Moderation\n✅ Kommunismus-Propaganda\n✅ Überwachung von Voice-Chat-Aktivitäten\n✅ Faire aufteilung von Nachrichten",
+        value="✅ Automatische Moderation\n✅ Kommunismus-Propaganda\n✅ Überwachung von Voice-Chat-Aktivitäten\n✅ Slash commands",
         inline=False
     )
 
     # Server & Member Count
-    embed.add_field(name="🌍 Server", value=f"{len(bot.guilds)} Server", inline=True)
-    embed.add_field(name="👥 Mitglieder", value=f"{sum(g.member_count for g in bot.guilds)} Mitglieder", inline=True)
+    embed.add_field(name="🌍 Server", value=f"{
+                    len(bot.guilds)} Server", inline=True)
+    embed.add_field(name="👥 Mitglieder", value=f"{
+                    sum(g.member_count for g in bot.guilds)} Mitglieder", inline=True)
 
     # Add a custom GIF or image (Optional)
     embed.set_image(url="https://c.tenor.com/KOI-kAqLStgAAAAd/tenor.gif")
 
     await ctx.send(embed=embed)
+
 
 @app_commands.command(name="info", description="Zeigt Informationen über den Commi Bot")
 async def info(interaction: discord.Interaction):
@@ -119,27 +223,70 @@ async def info(interaction: discord.Interaction):
     embed.set_footer(text="Communism Forever! ☭")
 
     # Bot Details
-    embed.add_field(name="📌 Name", value=interaction.client.user.name, inline=True)
+    embed.add_field(
+        name="📌 Name", value=interaction.client.user.name, inline=True)
     embed.add_field(name="🆔 ID", value=interaction.client.user.id, inline=True)
     embed.add_field(name="💡 Präfix", value="`ussr:`", inline=False)
 
     # Features
     embed.add_field(
         name="🔧 Funktionen",
-        value="✅ Automatische Moderation\n✅ Kommunismus-Propaganda\n✅ Überwachung von Voice-Chat-Aktivitäten\n✅ Faire aufteilung von Nachrichten",
+        value="✅ Automatische Moderation\n✅ Kommunismus-Propaganda\n✅ Überwachung von Voice-Chat-Aktivitäten\n✅ Slash commands",
         inline=False
     )
 
     # Server & Member Count
-    embed.add_field(name="🌍 Server", value=f"{len(interaction.client.guilds)} Server", inline=True)
-    embed.add_field(name="👥 Mitglieder", value=f"{sum(g.member_count for g in interaction.client.guilds)} Mitglieder", inline=True)
+    embed.add_field(name="🌍 Server", value=f"{
+                    len(interaction.client.guilds)} Server", inline=True)
+    embed.add_field(name="👥 Mitglieder", value=f"{sum(
+        g.member_count for g in interaction.client.guilds)} Mitglieder", inline=True)
 
     # Add a custom GIF or image (Optional)
-    embed.set_image(url="https://media.tenor.com/Lh01n6hzpLAAAAAd/communism.gif")
+    embed.set_image(url="https://c.tenor.com/KOI-kAqLStgAAAAd/tenor.gif")
 
     await interaction.response.send_message(embed=embed)
 
 bot.tree.add_command(info)
+
+
+@bot.command()
+async def kommunismus(ctx):
+    embed = discord.Embed(
+        title="☭ Was ist Kommunismus? ☭",
+        description=(
+            "Kommunismus ist eine politische und wirtschaftliche Ideologie, die auf "
+            "Gleichheit, Gemeinschaftseigentum und die Abschaffung der Klassenunterschiede abzielt. "
+            "Das Ziel ist eine Gesellschaft ohne Privateigentum an Produktionsmitteln, "
+            "in der alle Menschen gleichberechtigt am Wohlstand teilhaben."
+        ),
+        color=discord.Color.red()
+    )
+
+    embed.add_field(
+        name="🛠️ Kerngedanken",
+        value=(
+            "- **Gleichheit**: Keine soziale Klasse, jeder hat die gleichen Rechte.\n"
+            "- **Gemeinsames Eigentum**: Keine privaten Produktionsmittel, alles gehört dem Volk.\n"
+            "- **Planwirtschaft**: Die Wirtschaft wird zentral geplant, um Bedürfnisse zu erfüllen.\n"
+            "- **Internationale Solidarität**: Klassenkämpfe enden, wenn Arbeiter weltweit vereint sind."
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name="📜 Wichtige Theoretiker",
+        value=(
+            "- **Karl Marx & Friedrich Engels** – Verfasser des Kommunistischen Manifests (1848)\n"
+            "- **Wladimir Lenin** – Führte die Russische Revolution (1917) an\n"
+            "- **Mao Zedong** – Führte den Kommunismus in China ein"
+        ),
+        inline=False
+    )
+
+    embed.set_footer(text="Kommunismus – Eine Idee für eine gerechtere Welt.")
+    embed.set_thumbnail(url=bot.user.avatar.url)
+
+    await ctx.send(embed=embed)
 
 
 @bot.event
@@ -236,7 +383,7 @@ async def check_deafened_users():
     for guild in bot.guilds:
         for member in guild.members:
             if not member.voice:
-                continue 
+                continue
 
             if member.id not in deafened_users and member.voice.self_deaf:
                 deafened_users[member.id] = current_time
@@ -266,9 +413,12 @@ async def check_deafened_users():
                         try:
                             await member.send("Du wurdest aus dem Voice-Channel entfernt wegen Inaktivität.")
                             await target_user.send(
-                                f"👤 **BENUTZER:** {member.mention} (`{member.id}`)\n"
-                                f"📜 **NACHRICHT:** {member.display_name} wurde aus dem Voice-Channel entfernt wegen Inaktivität.\n"
-                                f"📅 **UHRZEIT:** {datetime.now().strftime('%H:%M Uhr %d.%m.%Y')}\n"
+                                f"👤 **BENUTZER:** {
+                                    member.mention} (`{member.id}`)\n"
+                                f"📜 **NACHRICHT:** {
+                                    member.display_name} wurde aus dem Voice-Channel entfernt wegen Inaktivität.\n"
+                                f"📅 **UHRZEIT:** {datetime.now().strftime(
+                                    '%H:%M Uhr %d.%m.%Y')}\n"
                                 f"------------------------------------------------------------------------------------\n"
                             )
                         except discord.Forbidden:
@@ -284,5 +434,10 @@ async def check_deafened_users():
                 except Exception as e:
                     print(f"Fehler beim Verschieben von {
                           member.display_name}: {e}")
+                    await target_user.send(
+                        f"❌ **FEHLER:** Fehler beim Verschieben von {
+                            member.display_name}: {e}\n"
+                        f"------------------------------------------------------------------------------------\n"
+                    )
 
 bot.run(TOKEN)
