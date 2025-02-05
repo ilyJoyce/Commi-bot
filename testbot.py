@@ -70,29 +70,36 @@ async def ping(ctx):
 
 
 @bot.command()
-async def bumm(ctx, member: discord.Member = None):
-    if ctx.author.guild_permissions.move_members: 
-        if member.voice and member.voice.channel:
-            channel = member.voice.channel
-            await ctx.send(f"{member.mention}! Es kracht!")
-            await asyncio.sleep(2)
-            await ctx.send(f"{member.mention}! Es knallt!")
-            await asyncio.sleep(2)
-            await ctx.send(f"{member.mention}! ES WIRD PASSIEREN!")
-            await asyncio.sleep(2)
-            await ctx.send(f"{member.mention}! WARTS AB DU MISSIT!")
-            await asyncio.sleep(2)
+async def bumm(ctx, *members: discord.Member):
+    if ctx.author.guild_permissions.move_members:
+        if members:
+            for member in members:
+                if member.voice and member.voice.channel:
+                    channel = member.voice.channel
+                    await ctx.send(f"{member.mention}! Es kracht!")
+                    await asyncio.sleep(2)
+                    await ctx.send(f"{member.mention}! Es knallt!")
+                    await asyncio.sleep(2)
+                    await ctx.send(f"{member.mention}! ES WIRD PASSIEREN!")
+                    await asyncio.sleep(2)
+                    await ctx.send(f"{member.mention}! WARTS AB DU MISSIT!")
+                    await asyncio.sleep(2)
 
-            vc = await channel.connect()
-            vc.play(discord.FFmpegPCMAudio("disconnect.mp3"))
-            while vc.is_playing():
-                await asyncio.sleep(1)
+                    vc = await channel.connect()
+                    vc.play(discord.FFmpegPCMAudio("verpiss-dich.mp3"))
+                    await asyncio.sleep(1.8)
 
-            await member.move_to(None, reason="Kicked by moderator")
-            await asyncio.sleep((2))
-            await vc.disconnect()
+                    if member.voice and member.voice.channel == channel:
+                        await member.move_to(None, reason="Kicked by moderator")
+                        await asyncio.sleep(0.8)
+                    else:
+                        await ctx.send(f"{member.mention} is no longer in the voice channel.")
+
+                    await vc.disconnect()
+                else:
+                    await ctx.send(f"{member.mention} is not in a voice channel.")
         else:
-            await ctx.send(f"Vorraussetzung nicht erfuellt")
+            await ctx.send("Please mention at least one member to disconnect.")
     else:
         await ctx.send("Bumm :3")
 
