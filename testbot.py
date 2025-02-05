@@ -18,7 +18,6 @@ MONITOR_CHANNEL_ID = 1335722013523710082
 COMMUNISM_WORDLIST = wordlist.get("wordlist", "communism").split(",")
 
 deafened_users = {}
-speaking_users = {}
 whitelist = {
     766992639916376064, 1141143333335465995, 871497360658800640, 729707718730055773,
     556889798170640384, 271324530901778433, 785989592158306365, 710432389943263283,
@@ -365,7 +364,7 @@ async def on_message(message):
 
 @bot.event
 async def on_voice_state_update(member, before, after):
-    """Track when a user starts/stops speaking or deafens themselves."""
+    """Track when a user deafens themselves."""
     current_time = asyncio.get_event_loop().time()
 
     if after.self_deaf and not before.self_deaf:
@@ -427,7 +426,6 @@ async def check_deafened_users():
                                   member.display_name}.")
 
                         deafened_users.pop(member.id, None)
-                        speaking_users.pop(member.id, None)
 
                 except discord.Forbidden:
                     print(f"Keine Rechte, um {
