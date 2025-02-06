@@ -68,39 +68,42 @@ async def ping(ctx):
     """Antwortet mit Pong!"""
     await ctx.send("🏓 Pong!")
 
-
 @bot.command()
-async def bumm(ctx, *members: discord.Member):
-    if ctx.author.guild_permissions.move_members:
-        if members:
-            mentions = " ".join([member.mention for member in members])
-            await ctx.send(f"{mentions} Es kracht!")
-            await asyncio.sleep(2)
-            await ctx.send(f"{mentions} dann knallt's!")
-            await asyncio.sleep(2)
-            await ctx.send(f"{mentions} ES WIRD PASSIEREN!")
-            await asyncio.sleep(5)
-
-            if members[0].voice and members[0].voice.channel:
-                channel = members[0].voice.channel
-                vc = await channel.connect()
-
-                vc.play(discord.FFmpegPCMAudio("verpiss-dich.mp3"))
-                await asyncio.sleep(1.8)
-
-                for member in members:
-                    if member.voice and member.voice.channel == channel:
-                        await member.move_to(None)
-
-                await asyncio.sleep(0.8)
-                await vc.disconnect()
-
-            else:
-                await ctx.send("One or more members are not in a voice channel.")
-        else:
-            await ctx.send("Please mention at least one member to disconnect.")
+async def bumm(ctx, member: discord.Member, server_id: int = None):
+    if not isinstance(ctx.channel, discord.DMChannel):
+        server = ctx.guild
     else:
-        await ctx.send("Bumm :3")
+        if not server_id:
+            await ctx.send("Bitte gib mir die Server-ID, wo du den User aus dem Channel schmeißn willst~ UwU Zum Beispiel: `ussr:bumm @user 123456789012345678`.")
+            return
+        server = bot.get_guild(server_id)
+        if not server:
+            await ctx.send(f"Kann den Server mit ID {server_id} nicht finden! Überprüf die ID nochmal und versuch es erneut~ ^w^")
+            return
+
+    member_permissions = server.get_member(ctx.author.id)
+    if not member_permissions or not member_permissions.guild_permissions.move_members:
+        await ctx.send("Du hast leider nicht die Erlaubnis, Mitglieder zu verschieben~ >:3")
+        return
+
+    if member.voice and member.voice.channel:
+        channel = member.voice.channel
+
+        vc = await channel.connect()
+        vc.play(discord.FFmpegPCMAudio("verpiss-dich.mp3"))
+        await asyncio.sleep(1.8)
+
+        if member.voice and member.voice.channel == channel:
+            await member.move_to(None)
+            await ctx.send(f"Ich hab {member.mention} aus dem Channel geschmießen ^w^.")
+            await asyncio.sleep(0.8)
+        else:
+            await ctx.send(f"W-was? {member.mention} hat sich einfach verpisst? >w<")
+
+        await vc.disconnect()
+    else:
+        await ctx.send(f"{member.mention} ist nicht mal in nem Channel! Ts-ts~ >:3")
+
 
 @bot.command()
 async def gay(ctx):
