@@ -33,6 +33,7 @@ whitelist = {
 # 785989592158306365 - Zoe
 # 710432389943263283 - Leyla
 # 1102328237889167470 - Alki
+# 314760782187462657 - Ratte
 
 intents = discord.Intents.default()
 intents.voice_states = True
