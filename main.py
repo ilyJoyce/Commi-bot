@@ -42,11 +42,19 @@ intents.members = True
 intents.messages = True
 intents.message_content = True
 intents.typing = False
-bot = commands.Bot(command_prefix="ussr:", intents=intents)
+async def get_prefix(bot, message):
+    raw_content = message.content.lower()
+    if raw_content.startswith("ussr:"):
+        return message.content[:5]
+    return "ussr:"
+bot = commands.Bot(case_insensitive=True, command_prefix=get_prefix, intents=intents)
 bot.remove_command("help")
+spam_ss = False
 
 last_message_time = 0
 cooldown_time = 2
+
+active_voice_clients = {}
 
 
 @bot.event
@@ -69,7 +77,45 @@ async def ping(ctx):
     await ctx.send("🏓 Pong!")
 
 @bot.command()
-async def bumm(ctx, member: discord.Member, server_id: int = None):
+async def ussr(ctx, member: discord.Member = None):
+    if ctx.author.guild_permissions.ban_members:
+        if ctx.author.voice and ctx.author.voice.channel:
+            channel = ctx.author.voice.channel
+            vc = await channel.connect()
+            active_voice_clients[ctx.guild.id] = vc
+
+            vc.play(discord.FFmpegPCMAudio("ussr.mp3"))
+            while vc.is_playing():
+                await asyncio.sleep(1)
+
+            if ctx.guild.id in active_voice_clients:
+                del active_voice_clients[ctx.guild.id]
+            await vc.disconnect()
+        else:
+            await ctx.send("Du musst in nem VC sein du Schlumpf~ UwU")
+    else:
+        await ctx.send("Du hast leider nicht die Erlaubnis den command zu nutzen, nya~ >w<")
+
+@bot.command()
+async def stop(ctx):
+    if ctx.author.guild_permissions.ban_members:    
+        if ctx.guild.id in active_voice_clients:
+            vc = active_voice_clients[ctx.guild.id]
+            
+            if vc.is_playing():
+                vc.stop()
+            await vc.disconnect()
+
+            del active_voice_clients[ctx.guild.id]
+
+            await ctx.send("Sowjetische Propaganda wurde beendet~ >:3")
+        else:
+            await ctx.send("Ich bin doch gar nicht in nem Voice-Channel, Kamerad~ :3")
+    else:
+        await ctx.send("Du hast leider nicht die Erlaubnis den command zu nutzen, nya~ >w<")
+
+@bot.command()
+async def disconnect(ctx, member: discord.Member, server_id: int = None):
     if not isinstance(ctx.channel, discord.DMChannel):
         server = ctx.guild
     else:
@@ -90,6 +136,71 @@ async def bumm(ctx, member: discord.Member, server_id: int = None):
         channel = member.voice.channel
 
         vc = await channel.connect()
+        active_voice_clients[ctx.guild.id] = vc
+        vc.play(discord.FFmpegPCMAudio("disconnected.mp3"))
+        while vc.is_playing():
+                await asyncio.sleep(0.1)
+
+        if member.voice and member.voice.channel == channel:
+            await member.move_to(None)
+            await ctx.send(f"Ich hab {member.mention} aus dem Channel geschmießen ^w^.")
+        else:
+            await ctx.send(f"W-was? {member.mention} hat sich einfach verpisst? >w<")
+
+        if ctx.guild.id in active_voice_clients:
+                del active_voice_clients[ctx.guild.id]
+        await vc.disconnect()
+    else:
+        await ctx.send(f"{member.mention} ist nicht mal in nem Channel! Ts-ts~ >:3")
+
+@bot.command()
+async def spam(ctx, member: discord.Member, *, message: str = "SOZIALISMUS!!! ~w~"):
+    global spam_ss
+    if ctx.author.id == BOT_HOST:
+        if member:
+            spam_ss = True
+            await ctx.send(f"Spamming {member.mention} gestartet!")
+            while spam_ss:
+                await member.send(message)
+                await asyncio.sleep(1)
+        else:
+            await ctx.send("Kein User angegeben~ >w<")
+    else:
+        await ctx.send("Du bist leider nicht der Host des Bots~ >w<")
+
+@bot.command()
+async def stop_spam(ctx):
+    global spam_ss
+    if ctx.author.id == BOT_HOST:
+        spam_ss = False
+        await ctx.send("Spamming gestoppt!")
+    else:
+        await ctx.send("Du bist leider nicht der Host des Bots~ >w<")
+
+
+@bot.command()
+async def bumm(ctx, member: discord.Member, server_id: int = None):
+    if not isinstance(ctx.channel, discord.DMChannel):
+        server = ctx.guild
+    else:
+        if not server_id:
+            await ctx.send("Bitte gib mir die Server-ID, wo du den User aus dem Channel schmeißn willst~ UwU Zum Beispiel: `ussr:bumm @user 123456789012345678`.")
+            return
+        server = bot.get_guild(server_id)
+        if not server:
+            await ctx.send(f"Kann den Server mit ID {server_id} nicht finden! Überprüf die ID nochmal und versuch es erneut~ ^w^")
+            return
+
+    member_permissions = server.get_member(ctx.author.id)
+    if not member_permissions or not member_permissions.guild_permissions.move_members:
+        await ctx.send("Bumm :3")
+        return
+
+    if member.voice and member.voice.channel:
+        channel = member.voice.channel
+
+        vc = await channel.connect()
+        active_voice_clients[ctx.guild.id] = vc
         vc.play(discord.FFmpegPCMAudio("verpiss-dich.mp3"))
         await asyncio.sleep(1.8)
 
@@ -100,6 +211,8 @@ async def bumm(ctx, member: discord.Member, server_id: int = None):
         else:
             await ctx.send(f"W-was? {member.mention} hat sich einfach verpisst? >w<")
 
+        if ctx.guild.id in active_voice_clients:
+                del active_voice_clients[ctx.guild.id]
         await vc.disconnect()
     else:
         await ctx.send(f"{member.mention} ist nicht mal in nem Channel! Ts-ts~ >:3")
