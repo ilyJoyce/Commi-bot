@@ -139,7 +139,9 @@ async def stop(ctx):
 @bot.command()
 async def spam(ctx, member: discord.Member, *, message: str = "SOZIALISMUS!!! ~w~"):
     global spam_ss
-    if ctx.author.id == BOT_HOST or ctx.author.id == CO_HOST:
+    bot_host = await bot.fetch_user(BOT_HOST)
+    co_host = await bot.fetch_user(CO_HOST)
+    if ctx.author == bot_host or ctx.author.id == co_host:
         if member:
             spam_ss = True
             await ctx.send(f"Spamming {member.mention}, mit Nachricht: '{message}' gestartet!")
@@ -154,7 +156,9 @@ async def spam(ctx, member: discord.Member, *, message: str = "SOZIALISMUS!!! ~w
 @bot.command()
 async def stop_spam(ctx):
     global spam_ss
-    if ctx.author.id == BOT_HOST or CO_HOST:
+    bot_host = await bot.fetch_user(BOT_HOST)
+    co_host = await bot.fetch_user(CO_HOST)
+    if ctx.author == bot_host or ctx.author == co_host:
         spam_ss = False
         await ctx.send("Spamming gestoppt!")
     else:
@@ -199,6 +203,43 @@ async def disconnect(ctx, member: discord.Member, server_id: int = None):
         await vc.disconnect()
     else:
         await ctx.send(f"{member.mention} ist nicht mal in nem Channel! Ts-ts~ >:3")
+
+@bot.command()
+async def move(ctx, member: discord.Member, channel_id: int = None):
+    if not isinstance(ctx.channel, discord.DMChannel):
+        server = ctx.guild
+    else:
+        await ctx.send("Bitte gib mir die Channel-ID, wohin du den/die Benutzer:in verschieben willst~ UwU Zum Beispiel: `ussr:bumm @user 123456789012345678`.")
+        return
+
+    member_permissions = server.get_member(ctx.author.id)
+    if not member_permissions or not member_permissions.guild_permissions.move_members:
+        await ctx.send("Du hast leider nicht die Erlaubnis, Mitglieder zu verschieben~ >:3")
+        return
+
+    current_channel_id = member.voice.channel
+
+    if not member.voice or not member.voice.channel:
+        await ctx.send(f"{member.mention} ist nicht mal in nem Channel! Ts-ts~ >:3")
+        return
+
+    target_channel = server.get_channel(channel_id)
+    if not target_channel or not isinstance(target_channel, discord.VoiceChannel):
+        await ctx.send("Ich kann diesen Channel nicht finden oder es ist kein Voice-Channel~ >w<")
+        return
+
+    vc = await current_channel_id.connect()
+    active_voice_clients[ctx.guild.id] = vc
+    vc.play(discord.FFmpegPCMAudio("auto.mp3"))
+    await asyncio.sleep(4.35)
+    await member.move_to(target_channel)
+    await ctx.send(f"Ich hab {member.mention} nach {target_channel.name} verschoben~ ^w^.")
+    while vc.is_playing():
+        await asyncio.sleep(0.1)
+
+    if ctx.guild.id in active_voice_clients:
+        del active_voice_clients[ctx.guild.id]
+    await vc.disconnect()
 
 @bot.command()
 async def bumm(ctx, member: discord.Member, server_id: int = None):
