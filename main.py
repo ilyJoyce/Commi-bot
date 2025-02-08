@@ -11,12 +11,14 @@ wordlist = IniConfig("wordlist.ini")
 
 TOKEN = config.get("config", "token")
 BOT_HOST = config.get("config", "bot_host")
+CO_HOST = config.get("config", "co_host")
 CHECK_INTERVAL = 10
 DEAFEN_TIME_LIMIT = 60 * 20
 VOICE_ACTIVITY_TIME_LIMIT = 60 * 45
 MONITOR_CHANNEL_ID = 1335722013523710082
 COMMUNISM_WORDLIST = wordlist.get("wordlist", "communism").split(",")
 
+active_voice_clients = {}
 deafened_users = {}
 whitelist = {
     766992639916376064, 1141143333335465995, 871497360658800640, 729707718730055773,
@@ -54,7 +56,7 @@ spam_ss = False
 last_message_time = 0
 cooldown_time = 2
 
-active_voice_clients = {}
+
 
 
 @bot.event
@@ -115,12 +117,37 @@ async def stop(ctx):
         await ctx.send("Du hast leider nicht die Erlaubnis den command zu nutzen, nya~ >w<")
 
 @bot.command()
+async def spam(ctx, member: discord.Member, *, message: str = "SOZIALISMUS!!! ~w~"):
+    global spam_ss
+    if ctx.author.id == BOT_HOST or CO_HOST:
+        if member:
+            spam_ss = True
+            await ctx.send(f"Spamming {member.mention}, mit Nachricht: '{message}' gestartet!")
+            while spam_ss:
+                await member.send(message)
+                await asyncio.sleep(1)
+        else:
+            await ctx.send("Kein:e Benutzer:in angegeben~ >w<")
+    else:
+        await ctx.send("Du bist leider kein:e Entwickler:in des Bots~ >w<")
+
+@bot.command()
+async def stop_spam(ctx):
+    global spam_ss
+    if ctx.author.id == BOT_HOST or CO_HOST:
+        spam_ss = False
+        await ctx.send("Spamming gestoppt!")
+    else:
+        await ctx.send("Du bist leider kein:e Entwickler:in des Bots~ >w<")
+
+
+@bot.command()
 async def disconnect(ctx, member: discord.Member, server_id: int = None):
     if not isinstance(ctx.channel, discord.DMChannel):
         server = ctx.guild
     else:
         if not server_id:
-            await ctx.send("Bitte gib mir die Server-ID, wo du den User aus dem Channel schmeißn willst~ UwU Zum Beispiel: `ussr:bumm @user 123456789012345678`.")
+            await ctx.send("Bitte gib mir die Server-ID, wo du den/die Benutzer:in aus dem Channel schmeißn willst~ UwU Zum Beispiel: `ussr:bumm @user 123456789012345678`.")
             return
         server = bot.get_guild(server_id)
         if not server:
@@ -154,37 +181,12 @@ async def disconnect(ctx, member: discord.Member, server_id: int = None):
         await ctx.send(f"{member.mention} ist nicht mal in nem Channel! Ts-ts~ >:3")
 
 @bot.command()
-async def spam(ctx, member: discord.Member, *, message: str = "SOZIALISMUS!!! ~w~"):
-    global spam_ss
-    if ctx.author.id == BOT_HOST:
-        if member:
-            spam_ss = True
-            await ctx.send(f"Spamming {member.mention} gestartet!")
-            while spam_ss:
-                await member.send(message)
-                await asyncio.sleep(1)
-        else:
-            await ctx.send("Kein User angegeben~ >w<")
-    else:
-        await ctx.send("Du bist leider nicht der Host des Bots~ >w<")
-
-@bot.command()
-async def stop_spam(ctx):
-    global spam_ss
-    if ctx.author.id == BOT_HOST:
-        spam_ss = False
-        await ctx.send("Spamming gestoppt!")
-    else:
-        await ctx.send("Du bist leider nicht der Host des Bots~ >w<")
-
-
-@bot.command()
 async def bumm(ctx, member: discord.Member, server_id: int = None):
     if not isinstance(ctx.channel, discord.DMChannel):
         server = ctx.guild
     else:
         if not server_id:
-            await ctx.send("Bitte gib mir die Server-ID, wo du den User aus dem Channel schmeißn willst~ UwU Zum Beispiel: `ussr:bumm @user 123456789012345678`.")
+            await ctx.send("Bitte gib mir die Server-ID, wo du den/die Benutzer:in aus dem Channel schmeißn willst~ UwU Zum Beispiel: `ussr:bumm @user 123456789012345678`.")
             return
         server = bot.get_guild(server_id)
         if not server:
@@ -218,7 +220,7 @@ async def bumm(ctx, member: discord.Member, server_id: int = None):
         await ctx.send(f"{member.mention} ist nicht mal in nem Channel! Ts-ts~ >:3")
 
 
-@bot.command()
+@bot.command(aliases=["lgbt", "furry"])
 async def gay(ctx):
     """GAY!"""
     await ctx.send(
@@ -276,18 +278,16 @@ async def commands(ctx):
     embed = discord.Embed(
         title="☭ Commi Bot Commands ☭",
         description="Hier sind alle commands aufgelistet!",
-        color=discord.Color.red()  # USSR Red 😉
+        color=discord.Color.red()
     )
 
-    embed.set_thumbnail(url=bot.user.avatar.url)  # Bot's Avatar
+    embed.set_thumbnail(url=bot.user.avatar.url)
     embed.set_footer(text="Communism Forever! ☭")
 
-    # Bot Details
     embed.add_field(name="📌 Name", value=bot.user.name, inline=True)
     embed.add_field(name="🆔 ID", value=bot.user.id, inline=True)
     embed.add_field(name="💡 Präfix", value="ussr:", inline=False)
 
-    # Features
     embed.add_field(
         name="🔧 Commands:",
         value="**ping** -> pong\n**info** -> Zeigt generelle Infos zum bot.\n**gay** -> GAY!\n**greet** `<user-ping>` -> begruesst einen User.\n**kommunismus** -> erklaert den Kommunismus.",
@@ -303,31 +303,27 @@ async def info(ctx):
     embed = discord.Embed(
         title="☭ Commi Bot Info ☭",
         description="Hier sind alle wichtigen Infos über mich!",
-        color=discord.Color.red()  # USSR Red 😉
+        color=discord.Color.red()
     )
 
-    embed.set_thumbnail(url=bot.user.avatar.url)  # Bot's Avatar
+    embed.set_thumbnail(url=bot.user.avatar.url)
     embed.set_footer(text="Communism Forever! ☭")
 
-    # Bot Details
     embed.add_field(name="📌 Name", value=bot.user.name, inline=True)
     embed.add_field(name="🆔 ID", value=bot.user.id, inline=True)
     embed.add_field(name="💡 Präfix", value="ussr:", inline=False)
 
-    # Features
     embed.add_field(
         name="🔧 Funktionen",
         value="✅ Automatische Moderation\n✅ Kommunismus-Propaganda\n✅ Überwachung von Voice-Chat-Aktivitäten\n✅ Slash commands",
         inline=False
     )
 
-    # Server & Member Count
     embed.add_field(name="🌍 Server", value=f"{
                     len(bot.guilds)} Server", inline=True)
     embed.add_field(name="👥 Mitglieder", value=f"{
                     sum(g.member_count for g in bot.guilds)} Mitglieder", inline=True)
 
-    # Add a custom GIF or image (Optional)
     embed.set_image(url="https://c.tenor.com/KOI-kAqLStgAAAAd/tenor.gif")
 
     await ctx.send(embed=embed)
@@ -344,26 +340,22 @@ async def info(interaction: discord.Interaction):
     embed.set_thumbnail(url=interaction.client.user.avatar.url)
     embed.set_footer(text="Communism Forever! ☭")
 
-    # Bot Details
     embed.add_field(
         name="📌 Name", value=interaction.client.user.name, inline=True)
     embed.add_field(name="🆔 ID", value=interaction.client.user.id, inline=True)
     embed.add_field(name="💡 Präfix", value="`ussr:`", inline=False)
 
-    # Features
     embed.add_field(
         name="🔧 Funktionen",
         value="✅ Automatische Moderation\n✅ Kommunismus-Propaganda\n✅ Überwachung von Voice-Chat-Aktivitäten\n✅ Slash commands",
         inline=False
     )
 
-    # Server & Member Count
     embed.add_field(name="🌍 Server", value=f"{
                     len(interaction.client.guilds)} Server", inline=True)
     embed.add_field(name="👥 Mitglieder", value=f"{sum(
         g.member_count for g in interaction.client.guilds)} Mitglieder", inline=True)
 
-    # Add a custom GIF or image (Optional)
     embed.set_image(url="https://c.tenor.com/KOI-kAqLStgAAAAd/tenor.gif")
 
     await interaction.response.send_message(embed=embed)
