@@ -99,6 +99,26 @@ async def ussr(ctx, member: discord.Member = None):
         await ctx.send("Du hast leider nicht die Erlaubnis den command zu nutzen, nya~ >w<")
 
 @bot.command()
+async def es_nervt(ctx, member: discord.Member = None):
+    if ctx.author.guild_permissions.ban_members:
+        if ctx.author.voice and ctx.author.voice.channel:
+            channel = ctx.author.voice.channel
+            vc = await channel.connect()
+            active_voice_clients[ctx.guild.id] = vc
+
+            vc.play(discord.FFmpegPCMAudio("ashley.mp3"))
+            while vc.is_playing():
+                await asyncio.sleep(1)
+
+            if ctx.guild.id in active_voice_clients:
+                del active_voice_clients[ctx.guild.id]
+            await vc.disconnect()
+        else:
+            await ctx.send("Du musst in nem VC sein du Schlumpf~ UwU")
+    else:
+        await ctx.send("Du hast leider nicht die Erlaubnis den command zu nutzen, nya~ >w<")
+
+@bot.command()
 async def stop(ctx):
     if ctx.author.guild_permissions.ban_members:    
         if ctx.guild.id in active_voice_clients:
@@ -119,13 +139,13 @@ async def stop(ctx):
 @bot.command()
 async def spam(ctx, member: discord.Member, *, message: str = "SOZIALISMUS!!! ~w~"):
     global spam_ss
-    if ctx.author.id == BOT_HOST or CO_HOST:
+    if ctx.author.id == BOT_HOST or ctx.author.id == CO_HOST:
         if member:
             spam_ss = True
             await ctx.send(f"Spamming {member.mention}, mit Nachricht: '{message}' gestartet!")
             while spam_ss:
                 await member.send(message)
-                await asyncio.sleep(1)
+                await asyncio.sleep(4)
         else:
             await ctx.send("Kein:e Benutzer:in angegeben~ >w<")
     else:
@@ -382,7 +402,7 @@ async def kommunismus(ctx):
             "- **Gleichheit**: Keine soziale Klasse, jeder hat die gleichen Rechte.\n"
             "- **Gemeinsames Eigentum**: Keine privaten Produktionsmittel, alles gehört dem Volk.\n"
             "- **Planwirtschaft**: Die Wirtschaft wird zentral geplant, um Bedürfnisse zu erfüllen.\n"
-            "- **Internationale Solidarität**: Klassenkämpfe enden, wenn Arbeiter weltweit vereint sind."
+            "- **Internationale Solidarität**: Klassenkämpfe enden, wenn Arbeiter:in weltweit vereint sind."
         ),
         inline=False
     )
