@@ -64,7 +64,7 @@ async def on_ready():
     target_user = await bot.fetch_user(BOT_HOST)
     print(f"Eingeloggt als {bot.user}")
     await target_user.send(
-        f"🆙 **BOT-START:** Kommi Bot wurde erfolgreich gestartet\n"
+        f"🆙 **BOT-START:** Kommi Bot wurde erfolgreich gestartet | {datetime.now().strftime('%H:%M')} Uhr\n"
         f"------------------------------------------------------------------------------------\n"
     )
     check_deafened_users.start()
@@ -205,22 +205,24 @@ async def disconnect(ctx, member: discord.Member, server_id: int = None):
         await ctx.send(f"{member.mention} ist nicht mal in nem Channel! Ts-ts~ >:3")
 
 @bot.command()
-async def move(ctx, member: discord.Member, channel_id: int = None):
-    if not isinstance(ctx.channel, discord.DMChannel):
-        server = ctx.guild
-    else:
-        await ctx.send("Bitte gib mir die Channel-ID, wohin du den/die Benutzer:in verschieben willst~ UwU Zum Beispiel: `ussr:bumm @user 123456789012345678`.")
+async def move(ctx, channel_id: int = None, *members: discord.Member):
+    if isinstance(ctx.channel, discord.DMChannel):
+        await ctx.send("Bitte gib mir die Channel-ID, wohin du den/die Benutzer:innen verschieben willst~ UwU Zum Beispiel: `ussr:move 123456789012345678 @user1 @user2`.")
         return
 
+    server = ctx.guild
     member_permissions = server.get_member(ctx.author.id)
+
     if not member_permissions or not member_permissions.guild_permissions.move_members:
         await ctx.send("Du hast leider nicht die Erlaubnis, Mitglieder zu verschieben~ >:3")
         return
 
-    current_channel_id = member.voice.channel
+    if not members:
+        await ctx.send("Bitte erwähne mindestens eine Person, die verschoben werden soll~ >w<")
+        return
 
-    if not member.voice or not member.voice.channel:
-        await ctx.send(f"{member.mention} ist nicht mal in nem Channel! Ts-ts~ >:3")
+    if not channel_id:
+        await ctx.send("Bitte gib eine gültige Channel-ID an~ >:3")
         return
 
     target_channel = server.get_channel(channel_id)
@@ -228,18 +230,80 @@ async def move(ctx, member: discord.Member, channel_id: int = None):
         await ctx.send("Ich kann diesen Channel nicht finden oder es ist kein Voice-Channel~ >w<")
         return
 
-    vc = await current_channel_id.connect()
+    first_member = members[0]
+    if not first_member.voice or not first_member.voice.channel:
+        await ctx.send(f"{first_member.mention} ist nicht mal in nem Channel! Ts-ts~ >:3")
+        return
+
+    current_channel = first_member.voice.channel
+    vc = await current_channel.connect()
+    active_voice_clients[ctx.guild.id] = vc  
+    vc.play(discord.FFmpegPCMAudio("auto.mp3"))
+
+    await asyncio.sleep(4.35)
+
+    for member in members:
+        if member.voice and member.voice.channel:
+            await member.move_to(target_channel)
+            await ctx.send(f"Ich hab {member.mention} nach {target_channel.name} verschoben~ ^w^.")
+        else:
+            await ctx.send(f"{member.mention} ist nicht in einem Voice-Channel, also kann ich sie nicht verschieben~ >:3")
+
+    while vc.is_playing():
+        await asyncio.sleep(0.1)
+
+    if ctx.guild.id in active_voice_clients:
+        del active_voice_clients[ctx.guild.id]
+
+    await vc.disconnect()
+
+@bot.command()
+async def move_all(ctx, target_channel_id: int, *excluded_members: discord.Member):
+    if not isinstance(ctx.channel, discord.DMChannel):
+        server = ctx.guild
+    else:
+        await ctx.send("Bitte gib mir die Channel-ID, wohin du die Benutzer:innen verschieben willst~ UwU Zum Beispiel: `ussr:bumm @user 123456789012345678`.")
+        return
+
+    member_permissions = server.get_member(ctx.author.id)
+    if not member_permissions or not member_permissions.guild_permissions.move_members:
+        await ctx.send("Du hast leider nicht die Erlaubnis, Mitglieder zu verschieben~ >:3")
+        return
+
+    target_channel = server.get_channel(target_channel_id)
+    if not target_channel or not isinstance(target_channel, discord.VoiceChannel):
+        await ctx.send("Ich kann diesen Channel nicht finden oder es ist kein Voice-Channel~ >w<")
+        return
+
+    members_to_move = []
+    for member in server.members:
+        if member.voice and member.voice.channel:
+            if member not in excluded_members and member.voice.channel != target_channel:
+                members_to_move.append(member)
+
+    if not members_to_move:
+        await ctx.send("Es gibt keine Mitglieder, die verschoben werden können!~ >w<")
+        return
+
+    vc = await ctx.author.voice.channel.connect()
     active_voice_clients[ctx.guild.id] = vc
     vc.play(discord.FFmpegPCMAudio("auto.mp3"))
     await asyncio.sleep(4.35)
-    await member.move_to(target_channel)
-    await ctx.send(f"Ich hab {member.mention} nach {target_channel.name} verschoben~ ^w^.")
+    for member in members_to_move:
+        try:
+            await member.move_to(target_channel)
+            await ctx.send(f"{member.mention} wurde nach {target_channel.name} verschoben~ ^w^.")
+        except Exception as e:
+            await ctx.send(f"Ich konnte {member.mention} nicht verschieben. Fehler: {str(e)}")
+
     while vc.is_playing():
         await asyncio.sleep(0.1)
 
     if ctx.guild.id in active_voice_clients:
         del active_voice_clients[ctx.guild.id]
     await vc.disconnect()
+
+
 
 @bot.command()
 async def bumm(ctx, member: discord.Member, server_id: int = None):
