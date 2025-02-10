@@ -130,9 +130,9 @@ async def stop(ctx):
 
             del active_voice_clients[ctx.guild.id]
 
-            await ctx.send("Sowjetische Propaganda wurde beendet~ >:3")
+            await ctx.send("Voice Chat Dienst wurde beendet~ >:3")
         else:
-            await ctx.send("Ich bin doch gar nicht in nem Voice-Channel, Kamerad~ :3")
+            await ctx.send("Ich bin doch gar nicht in nem Voice-Channel, du Schlumpf~ :3")
     else:
         await ctx.send("Du hast leider nicht die Erlaubnis den command zu nutzen, nya~ >w<")
 
