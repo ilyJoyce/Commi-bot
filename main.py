@@ -12,6 +12,8 @@ wordlist = IniConfig("wordlist.ini")
 TOKEN = config.get("config", "token")
 BOT_HOST = config.get("config", "bot_host")
 CO_HOST = config.get("config", "co_host")
+GUILD_ID = config.get("config", "guild_id")
+HBM_ID = config.get("config", "hbm_id")
 CHECK_INTERVAL = 10
 DEAFEN_TIME_LIMIT = 60 * 20
 VOICE_ACTIVITY_TIME_LIMIT = 60 * 45
@@ -23,7 +25,7 @@ deafened_users = {}
 whitelist = {
     766992639916376064, 1141143333335465995, 871497360658800640, 729707718730055773,
     556889798170640384, 271324530901778433, 785989592158306365, 710432389943263283,
-    1102328237889167470, 314760782187462657
+    1102328237889167470
 }
 
 # 766992639916376064 - teufelshirn
@@ -35,7 +37,6 @@ whitelist = {
 # 785989592158306365 - Zoe
 # 710432389943263283 - Leyla
 # 1102328237889167470 - Alki
-# 314760782187462657 - Ratte
 
 intents = discord.Intents.default()
 intents.voice_states = True
@@ -77,6 +78,68 @@ async def on_ready():
 async def ping(ctx):
     """Antwortet mit Pong!"""
     await ctx.send("🏓 Pong!")
+
+@bot.command()
+async def sync_hbm(ctx):
+    bot_host = await bot.fetch_user(BOT_HOST)
+    co_host = await bot.fetch_user(CO_HOST)
+    guild = discord.Object(id=HBM_ID)
+    if ctx.author == bot_host or ctx.author == co_host:
+        await bot.tree.sync(guild=guild)
+        await ctx.send("Slash-Commands wurden in Hotte Boyz Mafia synchronisiert! 🎉")
+        await bot_host.send(
+            f"✅ **ERFOLG:** Slash-Commands wurden in Hotte Boyz Mafia synchronisiert! 🎉\n"
+            f"👤 **BENUTZER:IN:** {ctx.author.mention} ({ctx.author.id}) hat die Slash-Commands in Hotte Boyz Mafia synchronisiert. | {datetime.now().strftime('%H:%M')} Uhr\n"
+            f"------------------------------------------------------------------------------------\n"
+        )
+    else:
+        await bot_host.send(
+            f"🚫 **FEHLER:** Kein:e Entwickler:in des Bots~ >w<\n"
+            f"👤 **BENUTZER:IN:** {ctx.author.mention} ({ctx.author.id}) hat versucht die Slash-Commands in Hotte Boyz Mafia zu synchronisieren. | {datetime.now().strftime('%H:%M')} Uhr\n"
+            f"------------------------------------------------------------------------------------\n"
+            )
+        return
+
+@bot.command()
+async def test_sync(ctx):
+    bot_host = await bot.fetch_user(BOT_HOST)
+    co_host = await bot.fetch_user(CO_HOST)
+    guild = discord.Object(id=GUILD_ID)
+    if ctx.author == bot_host or ctx.author == co_host:
+        await bot.tree.sync(guild=guild)
+        await ctx.send("Slash-Commands wurden zum testen synchronisiert! 🎉")
+        await bot_host.send(
+            f"✅ **ERFOLG:** Slash-Commands wurden zum testen synchronisiert! 🎉\n"
+            f"👤 **BENUTZER:IN:** {ctx.author.mention} ({ctx.author.id}) hat die Slash-Commands zum testen synchronisiert. | {datetime.now().strftime('%H:%M')} Uhr\n"
+            f"------------------------------------------------------------------------------------\n"
+        )
+    else:
+        await bot_host.send(
+            f"🚫 **FEHLER:** Kein:e Entwickler:in des Bots~ >w<\n"
+            f"👤 **BENUTZER:IN:** {ctx.author.mention} ({ctx.author.id}) hat versucht die Slash-Commands zum testen zu synchronisieren. | {datetime.now().strftime('%H:%M')} Uhr\n"
+            f"------------------------------------------------------------------------------------\n"
+            )
+        return
+
+@bot.command(aliases=["sync"])
+async def sync_commands(ctx):
+    bot_host = await bot.fetch_user(BOT_HOST)
+    co_host = await bot.fetch_user(CO_HOST)
+    if ctx.author == bot_host or ctx.author == co_host:
+        await bot.tree.sync()
+        await ctx.send("Slash-Commands wurden synchronisiert! 🎉")
+        await bot_host.send(
+            f"✅ **ERFOLG:** Slash-Commands wurden synchronisiert! 🎉\n"
+            f"👤 **BENUTZER:IN:** {ctx.author.mention} ({ctx.author.id}) hat die Slash-Commands synchronisiert. | {datetime.now().strftime('%H:%M')} Uhr\n"
+            f"------------------------------------------------------------------------------------\n"
+        )
+    else:
+        await bot_host.send(
+            f"🚫 **FEHLER:** Kein:e Entwickler:in des Bots~ >w<\n"
+            f"👤 **BENUTZER:IN:** {ctx.author.mention} ({ctx.author.id}) hat versucht die Slash-Commands zu synchronisieren. | {datetime.now().strftime('%H:%M')} Uhr\n"
+            f"------------------------------------------------------------------------------------\n"
+            )
+        return
 
 @bot.command()
 async def ussr(ctx, member: discord.Member = None):
@@ -204,58 +267,65 @@ async def disconnect(ctx, member: discord.Member, server_id: int = None):
     else:
         await ctx.send(f"{member.mention} ist nicht mal in nem Channel! Ts-ts~ >:3")
 
-@bot.command()
-async def move(ctx, channel_id: int = None, *members: discord.Member):
-    if isinstance(ctx.channel, discord.DMChannel):
-        await ctx.send("Bitte gib mir die Channel-ID, wohin du den/die Benutzer:innen verschieben willst~ UwU Zum Beispiel: `ussr:move 123456789012345678 @user1 @user2`.")
+async def autocomplete_channels(interaction: discord.Interaction, current: str):
+    """Gibt eine Liste von Voice-Channels basierend auf dem Benutzereingang zurück."""
+    return [
+        app_commands.Choice(name=ch.name, value=str(ch.id))
+        for ch in interaction.guild.voice_channels if current.lower() in ch.name.lower()
+    ][:25]
+
+@bot.tree.command(name="move", description="Verschiebe Mitglieder in einen anderen Voice-Channel")
+@app_commands.describe(channel="Der Ziel-Voice-Channel", members="Mitglieder zum Verschieben (erwähne sie mit @)")
+@app_commands.autocomplete(channel=autocomplete_channels)
+async def move(interaction: discord.Interaction, channel: str, members: str):
+    """Verschiebt Mitglieder in einen Voice-Channel und spielt eine Sounddatei ab."""
+    
+    await interaction.response.defer()
+
+    if not interaction.user.guild_permissions.move_members:
+        await interaction.followup.send("❌ Du hast keine Berechtigung, Mitglieder zu verschieben.", ephemeral=True)
         return
 
-    server = ctx.guild
-    member_permissions = server.get_member(ctx.author.id)
-
-    if not member_permissions or not member_permissions.guild_permissions.move_members:
-        await ctx.send("Du hast leider nicht die Erlaubnis, Mitglieder zu verschieben~ >:3")
+    target_channel = discord.utils.get(interaction.guild.voice_channels, id=int(channel))
+    if not target_channel:
+        await interaction.followup.send("❌ Channel nicht gefunden!", ephemeral=True)
         return
 
-    if not members:
-        await ctx.send("Bitte erwähne mindestens eine Person, die verschoben werden soll~ >w<")
+    member_ids = [int(m.strip('<@!>')) for m in members.split()]
+    members_to_move = [interaction.guild.get_member(mid) for mid in member_ids if interaction.guild.get_member(mid) is not None]
+
+    if not members_to_move:
+        await interaction.followup.send("❌ Keine gültigen Mitglieder gefunden!", ephemeral=True)
         return
 
-    if not channel_id:
-        await ctx.send("Bitte gib eine gültige Channel-ID an~ >:3")
-        return
-
-    target_channel = server.get_channel(channel_id)
-    if not target_channel or not isinstance(target_channel, discord.VoiceChannel):
-        await ctx.send("Ich kann diesen Channel nicht finden oder es ist kein Voice-Channel~ >w<")
-        return
-
-    first_member = members[0]
+    first_member = members_to_move[0]
     if not first_member.voice or not first_member.voice.channel:
-        await ctx.send(f"{first_member.mention} ist nicht mal in nem Channel! Ts-ts~ >:3")
+        await interaction.followup.send("❌ Das erste Mitglied ist nicht in einem Voice-Channel!", ephemeral=True)
         return
 
     current_channel = first_member.voice.channel
+
     vc = await current_channel.connect()
-    active_voice_clients[ctx.guild.id] = vc  
+    active_voice_clients[interaction.guild.id] = vc  
+
     vc.play(discord.FFmpegPCMAudio("auto.mp3"))
 
     await asyncio.sleep(4.35)
 
-    for member in members:
+    for member in members_to_move:
         if member.voice and member.voice.channel:
             await member.move_to(target_channel)
-            await ctx.send(f"Ich hab {member.mention} nach {target_channel.name} verschoben~ ^w^.")
-        else:
-            await ctx.send(f"{member.mention} ist nicht in einem Voice-Channel, also kann ich sie nicht verschieben~ >:3")
+
+    await interaction.followup.send(f"✅ Mitglieder wurden in {target_channel.mention} verschoben.")
 
     while vc.is_playing():
         await asyncio.sleep(0.1)
 
-    if ctx.guild.id in active_voice_clients:
-        del active_voice_clients[ctx.guild.id]
+    if interaction.guild.id in active_voice_clients:
+        del active_voice_clients[interaction.guild.id]
 
     await vc.disconnect()
+
 
 @bot.command()
 async def move_all(ctx, target_channel_id: int, *excluded_members: discord.Member):
@@ -619,7 +689,9 @@ async def check_deafened_users():
         for member in guild.members:
             if not member.voice:
                 continue
-
+            
+            is_guest = not any(role.permissions.connect for role in member.roles) 
+            
             if member.id not in deafened_users and member.voice.self_deaf:
                 deafened_users[member.id] = current_time
 
@@ -634,32 +706,39 @@ async def check_deafened_users():
 
             if (member.voice.self_deaf and time_since_deafened >= DEAFEN_TIME_LIMIT):
                 try:
-                    if afk_channel:
-                        await member.move_to(afk_channel, reason="Zu lange taub oder keine Aktivität")
-                        print(
-                            f"{member.display_name} wurde in den AFK-Channel verschoben.")
-
+                    if is_guest:
                         try:
-                            await member.send("Du wurdest aus dem Voice-Channel entfernt wegen Inaktivität.")
+                            await member.send("Du bist zu lange inaktiv gewesen. Bitte entmute dich. (Solange du nicht aktiv bist, wird dir diese Notiz gesendet.)")
+                            print(f"DM an Gast {member.display_name} gesendet.")
+                        except discord.Forbidden:
+                            print(f"DM an {member.display_name} nicht möglich.")
+                    else:
+                        if afk_channel:
+                            await member.move_to(afk_channel, reason="Zu lange taub oder keine Aktivität")
+                            print(
+                                f"{member.display_name} wurde in den AFK-Channel verschoben.")
+
                             try:
-                                await target_user.send(
-                                    f"👤 **BENUTZER:** {
-                                        member.mention} (`{member.id}`)\n"
-                                    f"📜 **NACHRICHT:** {
-                                        member.display_name} wurde aus dem Voice-Channel entfernt wegen Inaktivität.\n"
-                                    f"📅 **UHRZEIT:** {datetime.now().strftime(
-                                        '%H:%M Uhr %d.%m.%Y')}\n"
-                                    f"------------------------------------------------------------------------------------\n"
-                                )
+                                await member.send("Du wurdest aus dem Voice-Channel entfernt wegen Inaktivität.")
+                                try:
+                                    await target_user.send(
+                                        f"👤 **BENUTZER:** {
+                                            member.mention} (`{member.id}`)\n"
+                                        f"📜 **NACHRICHT:** {
+                                            member.display_name} wurde aus dem Voice-Channel entfernt wegen Inaktivität.\n"
+                                        f"📅 **UHRZEIT:** {datetime.now().strftime(
+                                            '%H:%M Uhr %d.%m.%Y')}\n"
+                                        f"------------------------------------------------------------------------------------\n"
+                                    )
+                                except discord.Forbidden:
+                                    print(f"DM nicht möglich an {
+                                        target_user.display_name}.")
+                                    await member.send("Es konnte keine DM an {target_user.display_name} geschickt werden.")
                             except discord.Forbidden:
                                 print(f"DM nicht möglich an {
-                                      target_user.display_name}.")
-                                await member.send("Es konnte keine DM an {target_user.display_name} geschickt werden.")
-                        except discord.Forbidden:
-                            print(f"DM nicht möglich an {
-                                  member.display_name}.")
+                                    member.display_name}.")
 
-                        deafened_users.pop(member.id, None)
+                            deafened_users.pop(member.id, None)
 
                 except discord.Forbidden:
                     print(f"Keine Rechte, um {
