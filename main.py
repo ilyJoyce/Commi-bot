@@ -523,6 +523,20 @@ async def info(ctx):
 
     await ctx.send(embed=embed)
 
+#              (
+#               )
+#              (
+#        /\  .-"""-.  /\
+#       //\\/  ,,,  \//\\
+#       |/\| ,;;;;;, |/\|
+#       //\\\;-"""-;///\\
+#      //  \/   .   \/  \\
+#     (| ,-_| \ | / |_-, |)
+#       //`__\.-.-./__`\\
+#      // /.-(() ())-.\ \\
+#     (\ |)   '---'   (| /)
+#      ` (|           |) `
+#        \)           (/
 
 @app_commands.command(name="info", description="Zeigt Informationen über den Commi Bot")
 async def info(interaction: discord.Interaction):
