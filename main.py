@@ -67,6 +67,13 @@ async def ping(ctx):
     await ctx.send("🏓 Pong!")
 
 @bot.command()
+async def print_whitelist(ctx):
+    await ctx.send("Hier ist die Whitelist:\n" +
+                   "\n".join([f"{i}. {user}" for i, user in enumerate(whitelist, start=1)]) +
+                   "\n\nDie Whitelist ist eine Liste von Usern, die "
+                   "nicht von der automatischen Deaf-Moderation betroffen sind.")
+
+@bot.command()
 async def sync_hbm(ctx):
     bot_host = await bot.fetch_user(BOT_HOST)
     co_host = await bot.fetch_user(CO_HOST)
