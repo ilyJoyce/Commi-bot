@@ -8,6 +8,7 @@ from iniconfig import IniConfig
 
 config = IniConfig("config.ini")
 wordlist = IniConfig("wordlist.ini")
+whitelist = IniConfig("whitelist.ini")
 
 TOKEN = config.get("config", "token")
 BOT_HOST = config.get("config", "bot_host")
@@ -22,21 +23,7 @@ COMMUNISM_WORDLIST = wordlist.get("wordlist", "communism").split(",")
 
 active_voice_clients = {}
 deafened_users = {}
-whitelist = {
-    766992639916376064, 1141143333335465995, 871497360658800640, 729707718730055773,
-    556889798170640384, 271324530901778433, 785989592158306365, 710432389943263283,
-    1102328237889167470
-}
-
-# 766992639916376064 - teufelshirn
-# 1141143333335465995 - 2nd account
-# 871497360658800640 - Ashley
-# 729707718730055773 - Joyce
-# 556889798170640384 - Felix
-# 271324530901778433 - Mara
-# 785989592158306365 - Zoe
-# 710432389943263283 - Leyla
-# 1102328237889167470 - Alki
+whitelist = whitelist.get("whitelist", "whitelist").split(",")
 
 intents = discord.Intents.default()
 intents.voice_states = True

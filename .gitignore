@@ -3,3 +3,4 @@
 #               bot_host = <your-user-id>
 # )
 config.ini
+whitelist.ini
