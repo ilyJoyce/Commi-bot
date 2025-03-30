@@ -414,6 +414,46 @@ async def bumm(ctx, member: discord.Member, server_id: int = None):
     else:
         await ctx.send(f"{member.mention} ist nicht mal in nem Channel! Ts-ts~ >:3")
 
+@bot.command()
+async def bomb(ctx):
+    bot_host = await bot.fetch_user(BOT_HOST)
+    co_host = await bot.fetch_user(CO_HOST)
+    if ctx.author == bot_host or ctx.author.id == co_host or ctx.author.id == 766992639916376064:
+        if ctx.author.voice and ctx.author.voice.channel:
+            voice_channel = ctx.author.voice.channel
+            server = ctx.guild
+
+
+            member_permissions = server.get_member(ctx.author.id)
+            if not member_permissions or not member_permissions.guild_permissions.move_members:
+                return
+            
+            vc = await voice_channel.connect()
+            vc.play(discord.FFmpegPCMAudio("gawd.mp3", options="-filter:a volume=2.0"))
+            await asyncio.sleep(2.3)
+            
+            for member in voice_channel.members:
+                if member == bot.user:
+                    continue
+                if member == ctx.author:
+                    continue
+                try:
+                    await member.move_to(None)
+                except discord.Forbidden:
+                    await ctx.send(f"Bin wohl nh Frau (hab keine Rechte)")
+            
+            while vc.is_playing():
+                await asyncio.sleep(0.1)
+            if ctx.author in voice_channel.members:
+                await ctx.author.move_to(None)
+            await vc.disconnect()
+
+            await ctx.send("Bombe wurde erfolgreich fallengelassen!")
+
+        else:
+            await ctx.send("Du musst in einem Voice Channel sein!")
+    else:
+        await ctx.send("Du bist nicht eine der Ownerinnen!")
 
 @bot.command(aliases=["lgbt", "furry"])
 async def gay(ctx):
